@@ -68,9 +68,12 @@ def check_memory():
     for p in mem.glob("*.md"):
         if p.name in ("MEMORY.md", "README.md"):
             continue
-        head = p.read_text(encoding="utf-8", errors="replace")[:400]
+        body = p.read_text(encoding="utf-8", errors="replace")
+        head = body[:400]
         if not head.startswith("---") or "description:" not in head:
             rep("WARN", f"메모리 프론트매터 {p.name}", "--- / name / description / metadata.type 필요")
+        if p.name.startswith(("feedback_", "project_")) and "**Evidence:**" not in body:
+            rep("WARN", f"메모리 근거 없음 {p.name}", "**Evidence:** (관찰한 사실·날짜) 줄을 넣는다 — 규약 .claude/memory/README.md")
 
 
 def check_docs():
