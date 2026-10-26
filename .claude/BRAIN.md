@@ -36,11 +36,11 @@
 
 ## 8. 작업 체계 ({{DATE}}, {{PERSON_A}} — claude-harness 템플릿)
 
-- 문서 하네스: BRAIN(확정)/STATE(진행) 분리. 결정 = BRAIN, 상태 = STATE, 중복 금지. STATE 항목에 담당 `[{{PERSON_A}}]`/`[{{PERSON_B}}]`/`[누구나]`
+- 문서 하네스: BRAIN(확정)/STATE(진행) 분리. 결정 = BRAIN, 상태 = STATE, 중복 금지. STATE 항목에 담당 {{MEMBER_TAGS}}
 - **세션 플로우 고정**: `/start`(pull → 상황판 → BRAIN/STATE → 할 일) ~ `/wrap`(체크포인트 → 공유 메모리 → 명시 스테이징 커밋 → 푸시). "마무리/커밋해줘" = `/wrap`
 - **공유 메모리**: `.claude/memory/`를 저장소에 두고 각자 Claude 메모리 폴더를 링크(`setup/common/link_memory.py`). `feedback_/project_/reference_` 공유, `local_` 개인
 - **커밋 규칙**: `<type>: 요약` + why + `Worked-by: 이름@기기` 트레일러(git config `harness.who/machine`). 자동 스테이징·강제 푸시·개인 절대경로 금지
 - **규칙은 글보다 장치로**: 트레일러는 `.githooks/prepare-commit-msg`가 붙이고, 금지 파일·비밀값·개인 절대경로는 `pre-commit`이 막고, 파괴적 git 명령은 Claude 훅 `pre_gate.py`가 막는다. 줄바꿈은 `.gitattributes`로 LF 통일. 점검은 `tools/harness/doctor.py`
 - **서로 넘기기 = GitHub 이슈**(`/issue`, 종류 라벨 + 상대 assignee, 양방향). **PR은 선택** — 상대 담당 영역·되돌리기 어려운 변경만 브랜치+PR, 받는 쪽이 Squash merge
-- 두 사람({{MACHINE_A}}·{{MACHINE_B}})이 Claude Code로 같은 저장소 `main`에서 작업. 기기별 설정(`.mcp.json`, `settings.local.json`)은 커밋하지 않는다
+- 멤버 {{MEMBERS}}가 Claude Code로 같은 저장소 `main`에서 작업. 기기별 설정(`.mcp.json`, `settings.local.json`)은 커밋하지 않는다
 - 응답 한국어, 선택지+추천 방식, 비용 민감(유료 생성은 확정 후 일괄)

@@ -1,6 +1,6 @@
 # claude-harness — 둘이서 Claude Code로 같이 만드는 프로젝트의 작업 체계
 
-두 사람이 각자 기기(맥/윈도우)에서 Claude Code로 **같은 저장소**를 번갈아 작업할 때 필요한 것을 한 벌로 묶었다. 어떤 프로젝트든 이 템플릿으로 시작하면 첫 세션부터 다음이 된다.
+두 사람 이상이 각자 기기(맥/윈도우)에서 Claude Code로 **같은 저장소**를 번갈아 작업할 때 필요한 것을 한 벌로 묶었다. 인원수 제한은 없다 — 담당 표시·`Worked-by`·이슈 assignee가 이름 단위로 돈다. 어떤 프로젝트든 이 템플릿으로 시작하면 첫 세션부터 다음이 된다.
 
 - **세션 플로우 고정**: `/start`(pull → 상황판 → 문서 → 할 일) ~ `/wrap`(체크포인트 → 메모리 → 커밋 → 푸시)
 - **문서 하네스**: `.claude/BRAIN.md`(확정된 결정만) / `.claude/STATE.md`(진행 상태, 담당 표시) — 인수인계는 이 두 파일로
@@ -17,16 +17,16 @@
 gh repo create <owner>/<project> --private --template <owner>/claude-harness --clone
 cd <project>
 
-# 2. 자리표시자 채우기 (프로젝트명·GitHub 경로·두 사람 이름·기기). 인자 없이 실행하면 물어본다
+# 2. 자리표시자 채우기 (프로젝트명·GitHub 경로·멤버 이름:기기 목록, 첫 멤버 = 나). 인자 없이 실행하면 물어본다
 python3 setup/init.py --project <project> --title "<한글 제목>" --owner <owner> \
-    --person-a <나> --machine-a mac --person-b <상대> --machine-b win
+    --members <나>:mac,<동료1>:win,<동료2>:mac
 
 # 3. 내 기기 신원 + 메모리 링크 + git 훅 활성화, 그리고 첫 커밋
 python3 setup/common/link_memory.py --who <나> --machine mac
 claude      # → /start
 ```
 
-`init.py`가 하는 일: `{{PROJECT}}` 같은 자리표시자를 전부 치환하고, 프로젝트용 README로 바꾸고, 오늘 날짜를 BRAIN/STATE에 찍고, `/issue`용 라벨 6종을 만드는 `gh` 명령을 알려 준다(`--labels`를 주면 직접 만든다). 상대방에게는 `setup/windows/bootstrap-prompt.md`의 회색 박스를 메신저로 보내면 된다.
+`init.py`가 하는 일: `{{PROJECT}}` 같은 자리표시자를 전부 치환하고, 프로젝트용 README로 바꾸고, 오늘 날짜를 BRAIN/STATE에 찍고, `/issue`용 라벨 6종을 만드는 `gh` 명령을 알려 준다(`--labels`를 주면 직접 만든다). 다른 멤버에게는 `setup/windows/bootstrap-prompt.md`의 회색 박스를 메신저로 보내면 된다(이름 부분만 그 사람 것으로).
 
 ## 구성
 
@@ -47,7 +47,7 @@ claude      # → /start
 ## 전제
 
 - 두 사람 모두 Claude Code + Git + Python 3.8+ (훅 스크립트가 표준 라이브러리만 쓴다). `/issue`를 쓰려면 GitHub CLI(`gh`) 로그인
-- 기본 브랜치 `main`에 둘 다 직접 커밋(충돌 나면 `pull --rebase`). 상대 담당 영역·되돌리기 어려운 변경만 브랜치 + PR
+- 기본 브랜치 `main`에 모두 직접 커밋(충돌 나면 `pull --rebase`). 남의 담당 영역·되돌리기 어려운 변경만 브랜치 + PR. 인원이 많아지면(4명 이상) PR 기본으로 바꾸는 쪽이 안전하다
 - 응답·문서는 한국어 기준으로 쓰여 있다
 
 ## 이 템플릿 자체를 고칠 때

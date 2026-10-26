@@ -4,7 +4,7 @@
 > {{DESCRIPTION}}
 > 제품·스택·화면은 BRAIN.md에 확정되는 대로 채운다.
 
-{{PERSON_A}}({{MACHINE_A}})·{{PERSON_B}}({{MACHINE_B}}) 두 사람이 각자 기기에서 Claude Code로 같이 개발한다.
+{{MEMBERS}} — 각자 기기에서 Claude Code로 같이 개발한다.
 
 ## 세션은 `/start`로 열고 `/wrap`으로 닫는다
 
@@ -20,7 +20,7 @@
 - 응답은 **한국어**.
 - 결정 = BRAIN, 상태 = STATE, 중복 금지. 새 결정이 확정되면 BRAIN에(날짜·누가), 상태가 바뀌면 STATE에. 중간 저장은 `/checkpoint`, 세션 끝은 `/wrap`.
 - BRAIN에 있는 결정과 충돌하는 제안을 하기 전에, BRAIN의 해당 항목을 근거로 사용자에게 먼저 확인.
-- **두 사람({{PERSON_A}}={{MACHINE_A}}, {{PERSON_B}}={{MACHINE_B}})이 한 저장소에서 작업한다.** STATE "다음 작업"이 인수인계 통로다 — 항목마다 담당 `[{{PERSON_A}}]`/`[{{PERSON_B}}]`/`[누구나]`를 적고, 상대가 잡은 항목은 완료 보고 없이 지우지 않는다.
+- **여러 사람({{MEMBERS}})이 한 저장소에서 작업한다.** STATE "다음 작업"이 인수인계 통로다 — 항목마다 담당 {{MEMBER_TAGS}}를 적고, 남이 잡은 항목은 완료 보고 없이 지우지 않는다.
 - **세션은 저장소 루트에서 연다.** 하위 폴더에서 열면 커맨드·메모리가 조용히 안 붙는다.
 
 ## 공유 메모리 (`.claude/memory/`)
@@ -34,7 +34,7 @@
 - 메시지: `<type>: <요약>` + 빈 줄 + why 1~2줄 + 빈 줄 + **`Worked-by: <이름>@<기기>`** (git config `harness.who`/`harness.machine`, `link_memory.py`가 설정). type ∈ `기능|수정|문서|하네스|에셋|설정|리팩터|체크포인트`.
 - `git add -A`/`.` 금지 — 파일을 명시 나열. `.mcp.json`·`settings.local.json`·`local_*` 메모리·비밀키·`img/candidates/`는 올리지 않는다.
 - `--force`·`--no-verify`·`reset --hard` 금지. 개인 절대경로를 메시지·문서·메모리에 남기지 않는다.
-- 상대 작업은 `git log`의 `Worked-by`와 STATE 담당으로 본다. 세션 시작 훅이 최근 4커밋의 작업자를 보여준다.
+- 남의 작업은 `git log`의 `Worked-by`와 STATE 담당으로 본다. 세션 시작 훅이 최근 4커밋의 작업자를 보여준다.
 
 ## 협업 스타일
 
@@ -47,7 +47,7 @@
 
 ## 상대에게 넘기기 — 이슈가 통로, PR은 선택
 
-- **막힌 것·결정해 줄 것·부탁·"봐줘"는 GitHub 이슈**로: `/issue <내용>` → 종류 라벨(`버그|환경|결정|도움|검토|아이디어`) + 상대를 assignee로 올린다. 상대는 다음 `/start`의 상황판에서 "내게 온 이슈"로 본다. 처리하면 `/issue done #N <한 줄>`. 결정 이슈의 답은 BRAIN에도 적는다(이슈는 흘러가고 BRAIN이 정본).
+- **막힌 것·결정해 줄 것·부탁·"봐줘"는 GitHub 이슈**로: `/issue <내용>` → 종류 라벨(`버그|환경|결정|도움|검토|아이디어`) + 받을 사람을 assignee로 올린다(협업자가 한 명이면 자동, 여럿이면 `/issue @이름 <내용>` 또는 물어봄). 상대는 다음 `/start`의 상황판에서 "내게 온 이슈"로 본다. 처리하면 `/issue done #N <한 줄>`. 결정 이슈의 답은 BRAIN에도 적는다(이슈는 흘러가고 BRAIN이 정본).
 - 웹·폰에서 올려도 된다 — 이슈 템플릿(`.github/ISSUE_TEMPLATE/`)이 같은 틀이다.
 - STATE와의 경계: STATE = 계획과 담당, 이슈 = 지금 상대 손이 필요한 것. 이슈 때문에 내 작업이 멈추면 STATE 항목 뒤에 `→ #N 대기`.
 - **PR은 선택**: 기본은 `main` 직접 커밋. 상대 담당 영역을 고치거나 되돌리기 어려운 변경이면 `이름/슬러그` 브랜치 + `gh pr create --assignee <상대>`, 받는 쪽이 Squash and merge. 절차는 `/issue` 커맨드 끝부분.
@@ -63,5 +63,5 @@
 
 ## 저장소
 
-- GitHub `{{REPO}}`, 브랜치 `main`. 두 사람 모두 `main`에 직접 커밋(충돌 나면 `pull --rebase`, 강제 금지).
+- GitHub `{{REPO}}`, 브랜치 `main`. 모두 `main`에 직접 커밋(충돌 나면 `pull --rebase`, 강제 금지).
 - 제외: `.mcp.json`(기기별 절대경로) · `.claude/settings.local.json` · `.claude/memory/local_*` · `img/candidates/` · 비밀키 파일(`local.properties`, `.env`) · 빌드 산출물

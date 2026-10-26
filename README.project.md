@@ -2,7 +2,7 @@
 
 {{DESCRIPTION}}
 
-{{PERSON_A}}({{MACHINE_A}})·{{PERSON_B}}({{MACHINE_B}}) 두 사람이 각자 기기에서 Claude Code로 같이 만든다. 규칙 정본은 [CLAUDE.md](CLAUDE.md), 확정 사항은 [.claude/BRAIN.md](.claude/BRAIN.md), 진행 상태는 [.claude/STATE.md](.claude/STATE.md).
+{{MEMBERS}} — 각자 기기에서 Claude Code로 같이 만든다. 규칙 정본은 [CLAUDE.md](CLAUDE.md), 확정 사항은 [.claude/BRAIN.md](.claude/BRAIN.md), 진행 상태는 [.claude/STATE.md](.claude/STATE.md).
 
 ## 시작하기
 

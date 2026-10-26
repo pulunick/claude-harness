@@ -3,11 +3,13 @@
 
     python3 setup/init.py                                   # 인자 없으면 물어본다
     python3 setup/init.py --project my-app --title "내 앱" --owner me \
-        --person-a 하늘 --machine-a mac --person-b 바다 --machine-b win [--with-craft] [--labels]
+        --members 하늘:mac,바다:win,산:mac [--with-craft] [--labels]
+    # 첫 멤버 = 나(저장소를 만든 사람). 2명이든 5명이든 같다. (--person-a/--person-b 옛 인자도 받는다)
 
 하는 일:
-  1. 저장소 안 텍스트 파일의 {{PROJECT}} {{PROJECT_TITLE}} {{OWNER}} {{REPO}} {{DESCRIPTION}}
-     {{PERSON_A}} {{MACHINE_A}} {{PERSON_B}} {{MACHINE_B}} {{DATE}} 를 치환
+  1. 저장소 안 텍스트 파일의 {{PROJECT}} {{PROJECT_TITLE}} {{OWNER}} {{REPO}} {{DESCRIPTION}} {{DATE}}
+     {{MEMBERS}}(이름(기기) 목록) {{MEMBER_TAGS}}(`[이름]`/…/`[누구나]`) {{PERSON_A}} {{MACHINE_A}}(첫 멤버 = 나)
+     {{PERSON_B}} {{MACHINE_B}}(두 번째 멤버 — 부트스트랩 프롬프트 기본값, 다른 멤버는 이름만 바꿔 보낸다) 를 치환
   2. README.project.md → README.md (하네스 설명 README 를 프로젝트 README 로 교체)
   3. --with-craft : optional/craft/ 의 설치 스크립트·스킬을 제자리에 복사하고 CLAUDE.md·settings.json·.gitignore 에 크래프트 항목 추가
   4. --labels     : /issue 용 라벨 6종을 gh 로 생성 (없으면 명령만 출력)
@@ -125,13 +127,40 @@ def create_labels(do_it):
             print("   " + cmd)
 
 
+def parse_members(a):
+    """--members '하늘:mac,바다:win' → [(이름, 기기), …]. 없으면 --person-a/b, 그것도 없으면 물어본다(빈 줄이면 끝)."""
+    if a.members:
+        out = []
+        for tok in a.members.split(","):
+            name, _, mach = tok.strip().partition(":")
+            out.append((name, mach or "mac"))
+        return out
+    if a.person_a:
+        out = [(a.person_a, a.machine_a or "mac")]
+        if a.person_b:
+            out.append((a.person_b, a.machine_b or "win"))
+        return out
+    out = []
+    print("멤버를 한 명씩 입력한다. 첫 번째가 나. 이름을 비우면 끝.")
+    while True:
+        name = ask(f"멤버 {len(out) + 1} 이름" + (" (나)" if not out else ""))
+        if not name:
+            break
+        mach = ask("  기기 (mac|win|…)", "mac" if (not out and sys.platform == "darwin") else "win")
+        out.append((name, mach))
+    if not out:
+        sys.exit("멤버가 없다 — --members 로 지정")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--project", help="저장소 이름(슬러그)")
     ap.add_argument("--title", help="프로젝트 한글 제목 (CLAUDE.md 제목)")
     ap.add_argument("--owner", help="GitHub 소유자(사용자/조직)")
     ap.add_argument("--description", default="", help="한 줄 설명")
-    ap.add_argument("--person-a", help="나(이 저장소를 만든 사람) 이름")
+    ap.add_argument("--members", help="멤버 목록 '이름:기기,이름:기기,…' — 첫 멤버가 나")
+    ap.add_argument("--person-a", help="(구식) 나 이름 — --members 가 없을 때")
     ap.add_argument("--machine-a", help="내 기기 (mac|win|…)")
     ap.add_argument("--person-b", help="상대 이름")
     ap.add_argument("--machine-b", help="상대 기기 (mac|win|…)")
@@ -146,11 +175,12 @@ def main():
         title = a.title or ask("프로젝트 제목(한글)", project)
         owner = a.owner or ask("GitHub 소유자(owner)")
         desc = a.description or ask("한 줄 설명", title)
-        person_a = a.person_a or ask("내 이름(커밋에 찍힘, 예: 하늘)")
-        machine_a = a.machine_a or ask("내 기기", "mac" if sys.platform == "darwin" else "win")
-        person_b = a.person_b or ask("상대 이름")
-        machine_b = a.machine_b or ask("상대 기기", "win" if machine_a == "mac" else "mac")
+        members = parse_members(a)
+        person_a, machine_a = members[0]
+        person_b, machine_b = members[1] if len(members) > 1 else ("<상대>", "win")
         values = {
+            "MEMBERS": "·".join(f"{n}({m})" for n, m in members),
+            "MEMBER_TAGS": "/".join(f"`[{n}]`" for n, _ in members) + "/`[누구나]`",
             "PROJECT": project, "PROJECT_TITLE": title, "OWNER": owner, "REPO": f"{owner}/{project}",
             "DESCRIPTION": desc, "PERSON_A": person_a, "MACHINE_A": machine_a,
             "PERSON_B": person_b, "MACHINE_B": machine_b, "DATE": datetime.date.today().isoformat(),

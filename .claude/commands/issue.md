@@ -2,18 +2,18 @@
 description: 상대에게 넘기기 — 문제·결정·부탁을 GitHub 이슈로 올려 상대 담당으로 지정(또는 내게 온 이슈 보기/닫기). 사용 `/issue <내용>` · `/issue list` · `/issue done #N <한 줄>`
 ---
 
-둘 사이의 "이거 네가 봐줘" 통로다. STATE는 계획, **이슈는 지금 막힌 것·결정해 줄 것·부탁**. 인자: $ARGUMENTS
+멤버 사이의 "이거 네가 봐줘" 통로다. STATE는 계획, **이슈는 지금 막힌 것·결정해 줄 것·부탁**. 인자: $ARGUMENTS
 
-## 공통: 나와 상대 알아내기
+## 공통: 나와 받을 사람 알아내기
 ```bash
 gh auth status >/dev/null 2>&1 || echo "gh 로그인 필요: gh auth login"
 ME=$(gh api user -q .login)
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-OTHER=$(gh api "repos/$REPO/collaborators" -q '.[].login' | grep -v "^$ME$" | head -1)
+OTHERS=$(gh api "repos/$REPO/collaborators" -q '.[].login' | grep -v "^$ME$")
 ```
-`OTHER`가 비어 있으면(아직 협업자 추가 전) 담당 지정 없이 올리고 그 사실을 보고한다. `gh`가 없으면 설치 안내(`setup/README.md`)하고, 대신 STATE "⏸ 결정 대기"에 적어 둔다.
+받을 사람(`OTHER`) 정하기: 인자가 `@이름`으로 시작하면 그 사람(GitHub 로그인 또는 CLAUDE.md의 멤버 이름 → 로그인 대응). 아니면 `OTHERS`가 **한 명**이면 자동, **여럿**이면 목록을 보여 주고 누구에게 넘길지 묻는다(결정·검토는 보통 그 영역 담당 — STATE `[이름]`을 보고 추천 하나를 붙인다). `OTHERS`가 비어 있으면(아직 협업자 추가 전) 담당 지정 없이 올리고 그 사실을 보고한다. `gh`가 없으면 설치 안내(`setup/README.md`)하고, 대신 STATE "⏸ 결정 대기"에 적어 둔다.
 
-## `/issue <내용>` — 올리기
+## `/issue [@이름] <내용>` — 올리기
 1. 내용을 보고 **종류 라벨** 하나를 고른다: `버그`(동작이 틀림) · `환경`(설치·MCP·훅이 안 됨) · `결정`(상대가 정해야 진행됨) · `도움`(상대 기기·권한·지식이 필요) · `검토`(코드/디자인 봐줘) · `아이디어`.
 2. 제목: `<종류>: <한 줄>`. 본문은 아래 틀을 채운다 — **상대 기기에서 재현·판단할 수 있게**, 추측과 사실을 나눈다.
    ```
@@ -37,7 +37,7 @@ OTHER=$(gh api "repos/$REPO/collaborators" -q '.[].login' | grep -v "^$ME$" | he
    ```
    본문은 heredoc으로 임시 파일에 쓴 뒤 넘긴다(여러 줄·따옴표 안전).
 4. 막혀서 내 작업이 멈춘 거면 STATE 해당 항목 뒤에 `→ #N 대기`를 적는다(커밋은 `/wrap`에서).
-5. 보고: 이슈 URL + 담당 + "상대 `/start`에서 보임".
+5. 보고: 이슈 URL + 담당 + "담당자의 다음 `/start`에서 보임".
 
 ## `/issue list` — 내게 온 것 / 내가 올린 것
 ```bash
@@ -47,7 +47,7 @@ gh issue list --author @me --state open
 내게 온 것은 급한 순으로 1~3줄 요약하고 어느 것부터 볼지 묻는다.
 
 ## `/issue done #N <한 줄>` — 처리 후 닫기
-처리 내용(무엇을 고쳤는지, 커밋 sha, 상대가 할 일이 남았는지)을 코멘트로 남기고 닫는다. 상대가 확인해야 끝나는 거면 닫지 말고 코멘트 + `--add-assignee`로 다시 넘긴다.
+처리 내용(무엇을 고쳤는지, 커밋 sha, 올린 사람이 할 일이 남았는지)을 코멘트로 남기고 닫는다. 올린 사람이 확인해야 끝나는 거면 닫지 말고 코멘트 + `--add-assignee`로 되넘긴다(`OTHER` = 이슈 작성자 `gh issue view N --json author -q .author.login`).
 ```bash
 gh issue close N --comment "<처리 내용 · 커밋 sha · 남은 일>"
 # 되넘기기: gh issue comment N --body "..." && gh issue edit N --add-assignee "$OTHER" --remove-assignee "$ME"
