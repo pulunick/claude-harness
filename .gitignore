@@ -1,0 +1,33 @@
+# 기기별 설정 — setup/ 스크립트가 절대경로로 생성
+.mcp.json
+.claude/settings.local.json
+.claude/.harness_state/
+
+# 공유 메모리 중 개인 전용 (규약: .claude/memory/README.md)
+.claude/memory/local_*.md
+
+# 비밀키
+local.properties
+.env
+.env.*
+*.keystore
+*.jks
+*.pem
+*.p12
+
+# 이미지 후보(로컬 보관) · 시안 빌드 결과
+img/candidates/
+docs/design/screen-mockup.built.html
+
+# OS · 에디터
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+__pycache__/
+
+# 빌드 산출물 — 스택 확정 후 보강
+build/
+dist/
+node_modules/

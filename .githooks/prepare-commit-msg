@@ -1,0 +1,19 @@
+#!/bin/sh
+# Worked-by: <who>@<machine> 트레일러를 자동으로 붙인다 — Claude 가 아니라 git 이 보장한다.
+# 활성화: git config core.hooksPath .githooks  (setup/common/link_memory.py 가 해 준다)
+MSG_FILE="$1"
+SOURCE="$2"
+case "$SOURCE" in merge|squash) exit 0;; esac
+
+WHO=$(git config harness.who)
+MACHINE=$(git config harness.machine)
+if [ -z "$WHO" ] || [ -z "$MACHINE" ]; then
+  echo "[hook] harness.who/machine 미설정 — python setup/common/link_memory.py 를 먼저 실행" >&2
+  exit 1
+fi
+grep -q '^Worked-by:' "$MSG_FILE" && exit 0
+
+# 주석(#) 줄 앞, 본문 끝에 트레일러 블록으로 추가
+TMP="$MSG_FILE.tmp"
+awk 'BEGIN{done=0} /^#/ && !done { print ""; print "Worked-by: '"$WHO@$MACHINE"'"; done=1 } { print } END { if(!done){ print ""; print "Worked-by: '"$WHO@$MACHINE"'" } }' "$MSG_FILE" > "$TMP" && mv "$TMP" "$MSG_FILE"
+exit 0

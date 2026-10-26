@@ -1,0 +1,19 @@
+{
+  "_comment": "~/.claude/settings.json(전역)에 합치는 예시. statusline.py는 setup/common/statusline.py를 ~/.claude/ 로 복사. 윈도우는 command를 python C:/Users/<이름>/.claude/statusline.py 처럼 절대경로(슬래시 /)로.",
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "effortLevel": "high",
+  "statusLine": {
+    "type": "command",
+    "command": "python3 ~/.claude/statusline.py"
+  },
+  "enabledPlugins": {
+    "github@anthropic-plugin-directory": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": { "source": "github", "repo": "anthropics/claude-plugins-official" }
+    }
+  }
+}

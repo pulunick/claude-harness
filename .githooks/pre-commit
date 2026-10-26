@@ -1,0 +1,30 @@
+#!/bin/sh
+# 커밋되면 안 되는 것이 스테이징됐는지 막는다 — 기기별 설정·개인 메모리·비밀키·후보 이미지.
+# 활성화: git config core.hooksPath .githooks  (setup/common/link_memory.py 가 해 준다)
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$STAGED" ] && exit 0
+
+BAD=$(printf '%s\n' "$STAGED" | grep -E '^(\.mcp\.json|\.claude/settings\.local\.json|local\.properties|\.env(\..*)?|.*\.(keystore|jks|pem|p12))$|^\.claude/memory/local_|^img/candidates/')
+if [ -n "$BAD" ]; then
+  echo "[hook] 커밋 금지 대상이 스테이징됨:" >&2
+  printf '  %s\n' $BAD >&2
+  echo "  git restore --staged <파일> 로 빼고 다시. 정말 필요하면 git commit --no-verify 가 아니라 .gitignore/규칙을 고친다" >&2
+  exit 1
+fi
+
+# 비밀값 패턴 (내용 검사) — 오탐이면 해당 줄을 고치거나 사용자에게 확인
+LEAK=$(git diff --cached -U0 | grep -E '^\+' | grep -E -i '(sk-ant-[A-Za-z0-9_-]{10,}|AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{30,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|(api[_-]?key|secret|password|token)\s*[:=]\s*["'"'"'][^"'"'"']{8,})' | head -5)
+if [ -n "$LEAK" ]; then
+  echo "[hook] 비밀값으로 보이는 줄이 있음:" >&2
+  printf '  %s\n' "$LEAK" | cut -c1-120 >&2
+  exit 1
+fi
+
+# 개인 절대경로 (문서·설정·메모리에 한함)
+PATHS=$(git diff --cached -U0 -- '*.md' '*.json' '*.py' '*.sh' '*.ps1' | grep -E '^\+' | grep -E '(/Users/[A-Za-z0-9_.-]+/|[A-Za-z]:\\Users\\[A-Za-z0-9_.-]+\\)' | grep -v -E '^\+\+\+|<이름>|<name>|예:|예\)' | head -5)
+if [ -n "$PATHS" ]; then
+  echo "[hook] 개인 절대경로가 들어감 (상대 기기엔 없는 경로) — <repo>/… 나 ~/ 로 바꿀 것:" >&2
+  printf '  %s\n' "$PATHS" | cut -c1-120 >&2
+  exit 1
+fi
+exit 0

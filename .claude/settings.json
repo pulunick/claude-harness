@@ -1,0 +1,55 @@
+{
+  "enabledMcpjsonServers": [],
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
+      "Bash(git config harness.*)",
+      "Bash(python tools/harness/*)",
+      "Bash(python3 tools/harness/*)",
+      "Bash(python tools/build_mockup.py:*)",
+      "Bash(python3 tools/build_mockup.py:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh auth status)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'for p in python3 python; do \"$p\" -c \"import sys\" >/dev/null 2>&1 && exec \"$p\" \"$CLAUDE_PROJECT_DIR/tools/harness/pre_gate.py\"; done; exit 0'"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'for p in python3 python; do \"$p\" -c \"import sys\" >/dev/null 2>&1 && exec \"$p\" \"$CLAUDE_PROJECT_DIR/tools/harness/session_start.py\"; done; echo \"[하네스] python 없음 — session_start 건너뜀\"'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'for p in python3 python; do \"$p\" -c \"import sys\" >/dev/null 2>&1 && exec \"$p\" \"$CLAUDE_PROJECT_DIR/tools/harness/pending.py\" --hook; done; exit 0'"
+          }
+        ]
+      }
+    ]
+  }
+}
