@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'h=$(cat ~/.claude/harness-home 2>/dev/null); [ -n \"$h\" ] && [ -f \"$h/setup/sync.py\" ] && python3 \"$h/setup/sync.py\" --check \"$CLAUDE_PROJECT_DIR\"; exit 0'"
+          }
+        ]
+      }
+    ]
+  }
+}

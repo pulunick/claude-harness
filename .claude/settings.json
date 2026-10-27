@@ -37,6 +37,10 @@
           {
             "type": "command",
             "command": "sh -c 'for p in python3 python; do \"$p\" -c \"import sys\" >/dev/null 2>&1 && exec \"$p\" \"$CLAUDE_PROJECT_DIR/tools/harness/session_start.py\"; done; echo \"[하네스] python 없음 — session_start 건너뜀\"'"
+          },
+          {
+            "type": "command",
+            "command": "sh -c 'h=$(cat ~/.claude/harness-home 2>/dev/null); [ -n \"$h\" ] && [ -f \"$h/setup/sync.py\" ] && python3 \"$h/setup/sync.py\" --check \"$CLAUDE_PROJECT_DIR\"; exit 0'"
           }
         ]
       }

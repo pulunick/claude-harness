@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "vectorcraft": { "type": "stdio", "command": "/Users/jinhyeong/.local/bin/vectorcraft-cli", "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"], "env": {} },
+    "photocraft": { "type": "stdio", "command": "/Users/jinhyeong/.local/bin/photocraft-cli", "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"], "env": {} },
+    "effectcraft": { "type": "stdio", "command": "/Users/jinhyeong/.local/bin/effectcraft-cli", "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"], "env": {} },
+    "designcraft": { "type": "stdio", "command": "/Users/jinhyeong/.local/bin/designcraft-cli", "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"], "env": {} },
+    "filmcraft": { "type": "stdio", "command": "/Users/jinhyeong/.local/bin/filmcraft-cli", "args": ["mcp"], "env": {} },
+    "soundcraft": { "type": "stdio", "command": "/Users/jinhyeong/.local/bin/soundcraft-cli", "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"], "env": {} }
+  }
+}

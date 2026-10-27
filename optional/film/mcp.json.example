@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "filmcraft": {
+      "command": "/bin/zsh",
+      "args": [
+        "-c",
+        "FILMCRAFT_CONTROL_TOKEN=$(<~/.config/artcraft/filmcraft-control-token) exec ~/.local/bin/filmcraft-cli mcp --bridge 127.0.0.1:<film포트>"
+      ]
+    },
+    "effectcraft": {
+      "command": "/Users/jinhyeong/.local/bin/effectcraft-cli",
+      "args": ["mcp", "--bridge", "<effect포트>"]
+    },
+    "vectorcraft": {
+      "command": "/Users/jinhyeong/.local/bin/vectorcraft-cli",
+      "args": ["mcp"]
+    },
+    "designcraft": {
+      "command": "/Users/jinhyeong/.local/bin/designcraft-cli",
+      "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"]
+    },
+    "photocraft": {
+      "command": "/Users/jinhyeong/.local/bin/photocraft-cli",
+      "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"]
+    },
+    "soundcraft": {
+      "command": "/Users/jinhyeong/.local/bin/soundcraft-cli",
+      "args": ["mcp", "--automation-read-root", "<프로젝트 절대경로>", "--automation-write-root", "<프로젝트 절대경로>"]
+    }
+  }
+}

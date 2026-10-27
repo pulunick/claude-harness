@@ -3,7 +3,7 @@
 
     python3 setup/init.py                                   # 인자 없으면 물어본다
     python3 setup/init.py --project my-app --title "내 앱" --owner me \
-        --members 하늘:mac,바다:win,산:mac [--with-craft] [--labels]
+        --members 하늘:mac,바다:win,산:mac [--with craft,film] [--labels]
     # 첫 멤버 = 나(저장소를 만든 사람). 2명이든 5명이든 같다. (--person-a/--person-b 옛 인자도 받는다)
 
 하는 일:
@@ -11,7 +11,8 @@
      {{MEMBERS}}(이름(기기) 목록) {{MEMBER_TAGS}}(`[이름]`/…/`[누구나]`) {{PERSON_A}} {{MACHINE_A}}(첫 멤버 = 나)
      {{PERSON_B}} {{MACHINE_B}}(두 번째 멤버 — 부트스트랩 프롬프트 기본값, 다른 멤버는 이름만 바꿔 보낸다) 를 치환
   2. README.project.md → README.md (하네스 설명 README 를 프로젝트 README 로 교체)
-  3. --with-craft : optional/craft/ 의 설치 스크립트·스킬을 제자리에 복사하고 CLAUDE.md·settings.json·.gitignore 에 크래프트 항목 추가
+  3. --with <모듈,…> : optional/<모듈>/ 을 켠다 (표·설정은 setup/modules.py). 그리고 .claude/harness.json 을 써서
+     이후 하네스 변경을 setup/sync.py 로 받을 수 있게 한다 (--with-craft 는 --with craft 와 같다)
   4. --labels     : /issue 용 라벨 6종을 gh 로 생성 (없으면 명령만 출력)
 한 번만 실행한다. 자리표시자가 더 없으면 (이미 초기화됨) 치환 단계는 건너뛴다.
 """
@@ -79,40 +80,33 @@ def remaining_placeholders():
     return found
 
 
-def enable_craft():
-    src = ROOT / "optional" / "craft"
-    if not src.exists():
-        print("[craft] optional/craft 없음 — 건너뜀")
-        return
-    for rel in ("setup/mac/install-craft.sh", "setup/windows/install-craft.ps1"):
-        d = ROOT / rel
-        d.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src / rel, d)
-    skill_dst = ROOT / ".claude" / "skills" / "craft"
-    if skill_dst.exists():
-        shutil.rmtree(skill_dst)
-    shutil.copytree(src / "skills" / "craft", skill_dst)
-    # CLAUDE.md 에 크래프트 절 추가
-    claude_md = ROOT / "CLAUDE.md"
-    snippet = (src / "CLAUDE.snippet.md").read_text(encoding="utf-8")
-    body = claude_md.read_text(encoding="utf-8")
-    if "## 크래프트 앱" not in body:
-        claude_md.write_text(body.rstrip() + "\n\n" + snippet, encoding="utf-8")
-    # settings.json 에 MCP 허용 목록
-    settings = ROOT / ".claude" / "settings.json"
-    cfg = json.loads(settings.read_text(encoding="utf-8"))
-    cfg["enabledMcpjsonServers"] = ["vectorcraft", "photocraft", "effectcraft", "designcraft", "filmcraft", "soundcraft"]
-    settings.write_text(json.dumps(cfg, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    # .gitignore
-    gi = ROOT / ".gitignore"
-    g = gi.read_text(encoding="utf-8")
-    if "craft/out/" not in g:
-        g = g.rstrip() + "\n\n# 크래프트 결과물 중 큰 것 (영상·오디오). 필요하면 개별로 git add -f\ncraft/out/*.mp4\ncraft/out/*.mov\ncraft/out/*.wav\n"
-        gi.write_text(g, encoding="utf-8")
-    for d in ("craft/vector", "craft/photo", "craft/effect", "craft/design", "craft/film", "craft/sound", "craft/out"):
-        (ROOT / d).mkdir(parents=True, exist_ok=True)
-        (ROOT / d / ".gitkeep").touch()
-    print("[craft] 설치 스크립트·스킬·CLAUDE.md 절·MCP 허용 목록 추가됨. 각 기기에서 setup/<os>/install-craft.* 실행")
+def enable_modules(mods):
+    """optional 모듈을 켠다 — 표와 한 번만 하는 설정은 setup/modules.py, 공용 파일은 거기 목록대로 복사. 그리고 manifest."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import modules as M
+    sync_py = Path(__file__).resolve().parent / "sync.py"
+    all_mods = list(dict.fromkeys(M.PROFILE_DEFAULTS["team"] + mods))
+    for mod in mods:
+        if mod not in M.MODULES:
+            print(f"[모듈] 모르는 모듈 {mod} — 가능: {list(M.MODULES)}")
+            continue
+        for n in M.enable(mod, ROOT, "team", all_mods):
+            print(f"[{mod}] {n}")
+        for src, dst in M.files_of(mod, "team"):
+            d = ROOT / dst
+            d.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(M.HARNESS / src, d)
+        if mod == "craft":
+            for d in ("craft/vector", "craft/photo", "craft/effect", "craft/design", "craft/film", "craft/sound", "craft/out"):
+                (ROOT / d / ".gitkeep").touch()
+            print("[craft] 설치 스크립트·프로젝트 스킬·CLAUDE.md 절·MCP 허용 목록 추가됨. 각 기기에서 setup/<os>/install-craft.* 실행")
+    # 이 저장소가 템플릿의 사본이면(ROOT ≠ HARNESS) manifest 를 써서 sync.py 로 공용 파일을 받을 수 있게 한다
+    if ROOT.resolve() != M.HARNESS.resolve():
+        commit = subprocess.run(["git", "-C", str(M.HARNESS), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        M.write_manifest(ROOT, "team", all_mods, commit)
+        M.merge_settings(ROOT, {"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": M.CHECK_HOOK}]}]}})
+        M.register(ROOT)
+        print(f"[하네스] .claude/harness.json ({', '.join(all_mods)}) — 공용 파일 갱신은 python3 {sync_py} {ROOT}")
 
 
 def create_labels(do_it):
@@ -164,7 +158,8 @@ def main():
     ap.add_argument("--machine-a", help="내 기기 (mac|win|…)")
     ap.add_argument("--person-b", help="상대 이름")
     ap.add_argument("--machine-b", help="상대 기기 (mac|win|…)")
-    ap.add_argument("--with-craft", action="store_true", help="optional/craft 모듈 활성화")
+    ap.add_argument("--with", dest="with_mods", default="", help="optional 모듈 목록, 쉼표 구분: craft,film")
+    ap.add_argument("--with-craft", action="store_true", help="(= --with craft)")
     ap.add_argument("--labels", action="store_true", help="gh 로 이슈 라벨 생성")
     a = ap.parse_args()
 
@@ -197,8 +192,8 @@ def main():
     else:
         print("[init] 자리표시자 없음 — 이미 초기화된 저장소. 치환 단계 건너뜀")
 
-    if a.with_craft:
-        enable_craft()
+    mods = [m for m in a.with_mods.split(",") if m] + (["craft"] if a.with_craft else [])
+    enable_modules(list(dict.fromkeys(mods)))
     create_labels(a.labels)
 
     print("\n다음:")

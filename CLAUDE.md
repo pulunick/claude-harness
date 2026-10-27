@@ -60,6 +60,7 @@
 - `/checkpoint` — BRAIN/STATE만 갱신 (세션 중간 저장, `/wrap`이 내부에서 호출)
 - `/mockup` — 화면 시안 HTML 빌드 + 아티팩트 재게시 (시안이 생기면 `docs/design/screen-mockup.html`)
 - 점검 스크립트: `tools/harness/session_start.py`(상황판) · `tools/harness/pending.py`(미커밋 감지, Stop 훅이 30분에 한 번 알림) · `tools/harness/doctor.py`(설치·규약 점검)
+- **하네스 공용 파일**(커맨드·훅·`tools/harness/`·`setup/common/` 등, 목록은 템플릿의 `setup/modules.py`)은 이 저장소에서 직접 고치지 않는다. 고칠 일이 생기면 템플릿 저장소에서 고쳐 커밋하고 `sync.py`로 받는다(`.claude/harness.json`이 기준 커밋, 뒤처지면 세션 시작 훅이 알림). 이 저장소 고유 파일(CLAUDE.md·BRAIN·STATE·settings·doc-keeper)은 여기서 관리.
 
 ## 저장소
 
