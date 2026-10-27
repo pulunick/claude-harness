@@ -46,11 +46,12 @@ MODULES = {
             "tools/harness/session_start.py", "tools/harness/pending.py", "tools/harness/pre_gate.py", "tools/harness/doctor.py",
             ".githooks/pre-commit", ".githooks/prepare-commit-msg",
             "setup/common/link_memory.py", "setup/common/statusline.py", "setup/common/claude-settings.example.json",
-            "setup/README.md", "setup/windows/bootstrap-prompt.md",
             ".claude/memory/README.md", ".github/ISSUE_TEMPLATE/problem.md", ".github/PULL_REQUEST_TEMPLATE.md",
             ".gitattributes", "AGENTS.md",
         ),
-        "snippets": [".claude/settings.json", "CLAUDE.md"],  # team 은 저장소 루트 자체가 뼈대 — 바뀌면 알려만 준다
+        # 자리표시자({{…}})가 들어가 init 때 치환되는 파일은 소유 — 바뀌면 알려만 준다
+        "snippets": [".claude/settings.json", "CLAUDE.md", "setup/README.md", "setup/windows/bootstrap-prompt.md",
+                     ".claude/BRAIN.md", ".claude/STATE.md", ".claude/agents/doc-keeper.md"],
     },
     "mockup": {
         "files": _same(".claude/commands/mockup.md", "tools/build_mockup.py"),
