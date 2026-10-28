@@ -3,13 +3,13 @@
 모든 프로젝트가 같은 뼈대(BRAIN/STATE·`/checkpoint`·훅)로 시작하고, 뼈대가 바뀌면 전부에 전파되게 하는 템플릿. 프로필 두 가지:
 
 - **team** — 두 사람 이상이 각자 기기(맥/윈도우)에서 **같은 저장소**를 번갈아 작업. 인원수 제한은 없다 — 담당 표시·`Worked-by`·이슈 assignee가 이름 단위로 돈다. 아래 항목 전부
-- **solo** — 혼자 작업(git 선택). BRAIN/STATE·`/checkpoint`·doc-keeper·하네스 점검 훅만. `profiles/solo/`
+- **solo** — 혼자 작업(git 선택). BRAIN/STATE·`/checkpoint`·`/role`·doc-keeper·하네스 점검 훅만. `profiles/solo/`
 
 ## 두 층 — 공용 파일과 프로젝트 소유 파일
 
 | | 무엇 | 누가 고치나 |
 |---|---|---|
-| **공용** | `.claude/commands/*.md`(checkpoint·start·wrap·issue·mockup), `tools/harness/*.py`, `.githooks/`, `setup/common/`, 모듈 스크립트(`tools/craft.sh` 등). 목록은 `setup/modules.py` | **여기서만.** 고쳐 커밋 → `python3 setup/sync.py --all` 로 전파 |
+| **공용** | `.claude/commands/*.md`(checkpoint·role·start·wrap·issue·mockup), `tools/harness/*.py`, `.githooks/`, `setup/common/`, 모듈 스크립트(`tools/craft.sh` 등). 목록은 `setup/modules.py` | **여기서만.** 고쳐 커밋 → `python3 setup/sync.py --all` 로 전파 |
 | **소유** | `CLAUDE.md`, `.claude/BRAIN.md`·`STATE.md`, `.claude/settings.json`, `.mcp.json`, `.claude/agents/doc-keeper.md`, 메모리 | 각 프로젝트. 켤 때 한 번 만들어 주고(`CLAUDE.snippet.md`·`settings.snippet.json`) 그 뒤 sync는 안 건드린다 — 조각이 바뀌면 "✎ 수동 확인"으로 알려만 준다 |
 
 각 프로젝트의 `.claude/harness.json`이 프로필·모듈·기준 커밋을 담고, `~/.claude/harness-projects.txt`가 등록 목록, `~/.claude/harness-home`이 이 저장소 위치다(기기마다 `sync.py init`/`--register`가 쓴다). 세션 시작 훅이 뒤처짐을 한 줄로 알리고, `sync.py <프로젝트>`가 3-way(기준 커밋 버전 vs 프로젝트 파일 vs 최신)로 갱신한다 — 프로젝트에서 손댄 공용 파일은 덮어쓰지 않고 충돌로 보고한다(되가져가거나 `--force`).
@@ -60,7 +60,7 @@ claude      # → /start
 |---|---|
 | `CLAUDE.md` | 프로젝트 규칙 정본 (init 이 제목·이름을 채움). `AGENTS.md`는 다른 에이전트용 진입점 |
 | `.claude/BRAIN.md` · `STATE.md` | 확정 / 진행. 뼈대만 있고 1~7장은 프로젝트가 채운다. 8장(작업 체계)은 이 하네스 설명 |
-| `.claude/commands/` | `/start` `/wrap` `/checkpoint` `/issue` `/mockup` |
+| `.claude/commands/` | `/start` `/wrap` `/checkpoint` `/role` `/issue` `/mockup` |
 | `.claude/agents/doc-keeper.md` | BRAIN/STATE 갱신 전담 에이전트 (프로젝트 문서 목록을 품으므로 소유 파일) |
 | `.claude/settings.json` | 훅(SessionStart·Stop·PreToolUse) + 읽기 전용 명령 허용 목록. 기기별 `settings.local.json`은 커밋 안 함 |
 | `.claude/memory/` | 공유 메모리. 규약은 안의 README. `feedback_*` 3건은 협업 스타일 기본값 — 안 맞으면 지운다 |

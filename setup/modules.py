@@ -37,7 +37,7 @@ def _same(*rels):
 MODULES = {
     "core": {
         # doc-keeper 에이전트는 프로젝트 문서 목록을 품으므로 소유 파일(프로필 뼈대에서 한 번 생성)
-        "files": _same(".claude/commands/checkpoint.md"),
+        "files": _same(".claude/commands/checkpoint.md", ".claude/commands/role.md"),
         "snippets": ["profiles/solo/.claude/agents/doc-keeper.md", "profiles/solo/CLAUDE.md"],
     },
     "team": {
