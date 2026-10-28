@@ -58,7 +58,7 @@
 - `/start` · `/wrap` — 세션 열기/닫기 (위)
 - `/issue` — 상대에게 넘기기 / 내게 온 것 보기 / 닫기 (위)
 - `/checkpoint` — BRAIN/STATE만 갱신 (세션 중간 저장, `/wrap`이 내부에서 호출)
-- `/role coding` · `/role review` — 두 세션 체제(2026-10-28~): 코딩 세션은 review 문서 항목을 구현·커밋·알림, 기획·검수 세션은 코드를 안 고치고 검토·결정 기록·커밋 diff 대조. 세션을 열면 먼저 역할을 정한다
+- `/role` — 세션 역할. 기본 `normal`(한 세션이 전부, 간단한 작업). 구현과 검수를 나눌 땐 세션 둘을 열어 `/role coding`(review 문서 항목 구현·커밋·알림) + `/role review`(코드 안 고침, 검토·결정 기록·커밋 diff 대조) — 두 세션 체제(2026-10-28~)
 - `/mockup` — 화면 시안 HTML 빌드 + 아티팩트 재게시 (시안이 생기면 `docs/design/screen-mockup.html`)
 - 점검 스크립트: `tools/harness/session_start.py`(상황판) · `tools/harness/pending.py`(미커밋 감지, Stop 훅이 30분에 한 번 알림) · `tools/harness/doctor.py`(설치·규약 점검)
 - **하네스 공용 파일**(커맨드·훅·`tools/harness/`·`setup/common/` 등, 목록은 템플릿의 `setup/modules.py`)은 이 저장소에서 직접 고치지 않는다. 고칠 일이 생기면 템플릿 저장소에서 고쳐 커밋하고 `sync.py`로 받는다(`.claude/harness.json`이 기준 커밋, 뒤처지면 세션 시작 훅이 알림). 이 저장소 고유 파일(CLAUDE.md·BRAIN·STATE·settings·doc-keeper)은 여기서 관리.

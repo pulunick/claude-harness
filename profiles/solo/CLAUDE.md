@@ -20,7 +20,7 @@
 
 - 공용 파일(`.claude/commands/checkpoint.md`·`role.md`, `.claude/agents/doc-keeper.md`, 모듈 스크립트)은 **이 프로젝트에서 고치지 않는다**. 고칠 일이 생기면 하네스 저장소(`~/.claude/harness-home`이 가리키는 곳)에서 고쳐 커밋하고 `setup/sync.py --all`로 전파한다. 상태는 `.claude/harness.json`, 뒤처지면 세션 시작 훅이 알린다.
 - 프로젝트 소유: 이 문서 · BRAIN · STATE · `.claude/settings.json` · `.mcp.json`.
-- `/role coding` · `/role review` — 두 세션 체제(2026-10-28~): 코딩 세션은 review 문서 항목을 구현·커밋·알림, 기획·검수 세션은 코드를 안 고치고 검토·결정 기록·커밋 diff 대조. 세션을 열면 먼저 역할을 정한다.
+- `/role` — 세션 역할. 기본 `normal`(한 세션이 전부, 간단한 작업). 구현과 검수를 나눌 땐 세션 둘을 열어 `/role coding`(review 문서 항목 구현·커밋·알림) + `/role review`(코드 안 고침, 검토·결정 기록·커밋 diff 대조) — 두 세션 체제(2026-10-28~).
 
 ## 이 프로젝트 고유
 
