@@ -5,6 +5,26 @@
 - **team** — 두 사람 이상이 각자 기기(맥/윈도우)에서 **같은 저장소**를 번갈아 작업. 인원수 제한은 없다 — 담당 표시·`Worked-by`·이슈 assignee가 이름 단위로 돈다. 아래 항목 전부
 - **solo** — 혼자 작업(git 선택). BRAIN/STATE·`/checkpoint`·`/role`·doc-keeper·하네스 점검 훅만. `profiles/solo/`
 
+## 처음 쓰는 사람 — 5분 시작
+
+필요한 것: [Claude Code](https://claude.com/claude-code) · Git · Python 3.8+ (스크립트는 표준 라이브러리만). team 프로필의 `/issue`는 GitHub CLI(`gh`) 로그인. 문서·응답은 한국어 기준.
+
+```bash
+# 1. 하네스를 아무 데나 받는다 (이 폴더가 "하네스 홈" — 이후 모든 프로젝트가 여기서 공용 파일을 받는다)
+git clone https://github.com/pulunick/claude-harness.git ~/claude-harness
+
+# 2a. 혼자 하는 프로젝트 — 새 폴더든 기존 폴더든
+python3 ~/claude-harness/setup/sync.py init ~/work/my-app --profile solo --title "내 앱" --desc "한 줄 설명"
+cd ~/work/my-app && claude        # 세션에서 BRAIN/STATE 를 채워 가며 작업, 마무리는 /checkpoint
+
+# 2b. 여럿이 한 저장소 — 아래 "team 프로젝트 시작"
+```
+
+- 하네스를 고쳐 쓰고 싶으면 **포크**해서 받는다. 프로젝트의 `.claude/harness.json`에 내 클론의 origin이 적히고, 내 포크에서 고친 것만 `sync.py --all`로 내 프로젝트들에 퍼진다.
+- 원본을 따라가려면 하네스 홈에서 `git pull` → `python3 setup/sync.py --all`. 프로젝트에서 직접 고친 공용 파일은 덮어쓰지 않고 충돌로 알려 준다.
+- `--with craft|film|post`는 **작성자 환경용 선택 모듈**이다(ArtCraft 앱 6종, `film/` 상위 폴더 관례). 해당 도구가 없으면 켜지 않는다 — 기본 `solo`·`team`만으로 완결된다.
+- CLAUDE.md에 나오는 전역 스킬(`craft`·`codex-image`·`video-edit`)은 작성자 기기의 `~/.claude/skills/`에 있는 것이라 이 저장소에 없다. 없으면 그 줄은 무시하거나 지운다.
+
 ## 두 층 — 공용 파일과 프로젝트 소유 파일
 
 | | 무엇 | 누가 고치나 |
@@ -24,7 +44,7 @@ python3 setup/sync.py --check <프로젝트>          # 훅용 한 줄 (뒤처�
 ## solo 프로젝트 시작 (한 줄)
 
 ```bash
-python3 ~/Desktop/mini-project/claude-harness/setup/sync.py init <폴더> --profile solo --with craft[,film|post] --title "<제목>" --desc "<한 줄>"
+python3 <하네스 홈>/setup/sync.py init <폴더> --profile solo --with craft[,film|post] --title "<제목>" --desc "<한 줄>"
 # 이미 돌아가는 프로젝트에 입힐 때는 --bare (CLAUDE.md 절·폴더 생성 생략, manifest·점검 훅·공용 파일만)
 ```
 
@@ -69,9 +89,9 @@ claude      # → /start
 | `setup/` | `init.py`(team 초기화) · `sync.py`(solo 초기화·공용 파일 전파·뒤처짐 점검) · `modules.py`(공용/소유 표, 모듈 켜기) · `common/link_memory.py`(신원·메모리 링크·훅 경로) · `common/statusline.py` · `README.md`(기기별 설치) · `windows/bootstrap-prompt.md` |
 | `profiles/solo/` | solo 프로필의 소유 파일 뼈대 (CLAUDE.md·BRAIN·STATE·settings·doc-keeper) |
 | `.github/` | 이슈·PR 템플릿 (`/issue`와 같은 틀) |
-| `optional/craft/` | **선택 모듈** — ArtCraft 디자인 앱 6종 MCP. team은 설치 스크립트 + 프로젝트 스킬 사본(윈도우 상대용, 전역 스킬 `craft`의 변형 — 전역이 바뀌면 diff 해서 맞춘다), solo는 `.mcp.json`·CLAUDE 절만(전역 스킬 사용) |
-| `optional/film/` | **선택 모듈** — 영상 프로젝트 뼈대(`film/` 아래): `/update`·`tools/craft.sh`·폴더·영상용 BRAIN/STATE·`.mcp.json` 본. 옛 `film/_template` 흡수 |
-| `optional/post/` | **선택 모듈** — SNS 게시물 채널 뼈대(글 + 15~30초 세로 영상, 어디에 두든 혼자 섬): `docs/01_게시물/<날짜_슬러그>/post.md` 틀·세로·자막 기본·`tools/craft.sh`. film과 택1 |
+| `optional/craft/` | **선택 모듈(작성자 환경)** — ArtCraft 디자인 앱 6종 MCP. team은 설치 스크립트 + 프로젝트 스킬 사본(윈도우 상대용, 전역 스킬 `craft`의 변형 — 전역이 바뀌면 diff 해서 맞춘다), solo는 `.mcp.json`·CLAUDE 절만(전역 스킬 사용) |
+| `optional/film/` | **선택 모듈(작성자 환경)** — 영상 프로젝트 뼈대(`film/` 아래): `/update`·`tools/craft.sh`·폴더·영상용 BRAIN/STATE·`.mcp.json` 본. 옛 `film/_template` 흡수 |
+| `optional/post/` | **선택 모듈(작성자 환경)** — SNS 게시물 채널 뼈대(글 + 15~30초 세로 영상, 어디에 두든 혼자 섬): `docs/01_게시물/<날짜_슬러그>/post.md` 틀·세로·자막 기본·`tools/craft.sh`. film과 택1 |
 
 ## 전제
 

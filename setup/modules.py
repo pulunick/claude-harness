@@ -14,6 +14,7 @@
 import datetime
 import json
 import os
+import re
 import shutil
 from pathlib import Path
 
@@ -112,10 +113,21 @@ def read_manifest(root):
     return json.loads(p.read_text(encoding="utf-8"))
 
 
+def harness_url():
+    """이 하네스 클론의 origin — 포크해 쓰는 사람의 manifest 에도 자기 저장소가 적히게."""
+    try:
+        import subprocess
+        u = subprocess.run(["git", "-C", str(HARNESS), "remote", "get-url", "origin"], capture_output=True, text=True, timeout=5).stdout.strip()
+    except Exception:
+        u = ""
+    u = re.sub(r"^git@github\.com:", "https://github.com/", u)
+    return re.sub(r"\.git$", "", u) or "https://github.com/pulunick/claude-harness"
+
+
 def write_manifest(root, profile, modules, commit):
     p = Path(root) / MANIFEST
     p.parent.mkdir(parents=True, exist_ok=True)
-    data = {"harness": "https://github.com/pulunick/claude-harness", "profile": profile,
+    data = {"harness": harness_url(), "profile": profile,
             "modules": list(dict.fromkeys(modules)), "commit": commit,
             "synced": datetime.date.today().isoformat()}
     p.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -199,7 +211,7 @@ def enable(module, root, profile, modules=()):
         # film/ 아래 채널은 film 이 브리지 포트 본을 쓴다 (--with 순서와 무관하게)
         if profile == "solo" and not (root / ".mcp.json").exists() and not ("film" in modules and film_parent(root)):
             ex = (HARNESS / "optional/craft/mcp.json.example").read_text(encoding="utf-8")
-            (root / ".mcp.json").write_text(ex.replace("<프로젝트 절대경로>", str(root.resolve())), encoding="utf-8")
+            (root / ".mcp.json").write_text(ex.replace("<프로젝트 절대경로>", str(root.resolve())).replace("<홈>", str(Path.home())), encoding="utf-8")
             notes.append(".mcp.json (headless 6종, 이 폴더로 루트 제한)")
         notes.append("team 이면 각 기기에서 setup/<os>/install-craft.* 실행" if profile == "team" else "세션 재시작 후 MCP 승인")
     elif module == "film":
@@ -215,7 +227,7 @@ def enable(module, root, profile, modules=()):
         # 영상용 BRAIN/STATE 뼈대는 optional/film/skeleton/ — install_profile 이 자리표시자를 채워 만든다
         if not (root / ".mcp.json").exists():
             ex = (HARNESS / ("optional/film/mcp.json.example" if film_parent(root) else "optional/craft/mcp.json.example")).read_text(encoding="utf-8")
-            (root / ".mcp.json").write_text(ex.replace("<프로젝트 절대경로>", str(root.resolve())), encoding="utf-8")
+            (root / ".mcp.json").write_text(ex.replace("<프로젝트 절대경로>", str(root.resolve())).replace("<홈>", str(Path.home())), encoding="utf-8")
             notes.append(".mcp.json — <film포트>·<effect포트> 를 film/README.md 배정표대로 채울 것" if film_parent(root)
                          else ".mcp.json (headless 6종, 이 폴더로 루트 제한)")
     elif module == "post":

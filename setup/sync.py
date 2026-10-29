@@ -140,7 +140,7 @@ def init(root, profile, with_mods, title, desc, bare=False):
         mods = list(dict.fromkeys(existing["modules"] + mods))
     notes = []
     if profile == "team" and not (root / ".claude" / "commands" / "start.md").exists():
-        print("team 프로필의 새 프로젝트는 `gh repo create --template pulunick/claude-harness` 후 `setup/init.py` 로 만든다. "
+        print(f"team 프로필의 새 프로젝트는 `gh repo create --template {M.harness_url().replace('https://github.com/', '')}` 후 `setup/init.py` 로 만든다. "
               "여기서는 기존 team 저장소에 manifest 만 입힌다.")
     for mod in mods:
         if bare or mod in ("core", "team"):
