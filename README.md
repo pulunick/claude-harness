@@ -24,7 +24,7 @@ python3 setup/sync.py --check <프로젝트>          # 훅용 한 줄 (뒤처�
 ## solo 프로젝트 시작 (한 줄)
 
 ```bash
-python3 ~/Desktop/mini-project/claude-harness/setup/sync.py init <폴더> --profile solo --with craft[,film] --title "<제목>" --desc "<한 줄>"
+python3 ~/Desktop/mini-project/claude-harness/setup/sync.py init <폴더> --profile solo --with craft[,film|post] --title "<제목>" --desc "<한 줄>"
 # 이미 돌아가는 프로젝트에 입힐 때는 --bare (CLAUDE.md 절·폴더 생성 생략, manifest·점검 훅·공용 파일만)
 ```
 
@@ -71,6 +71,7 @@ claude      # → /start
 | `.github/` | 이슈·PR 템플릿 (`/issue`와 같은 틀) |
 | `optional/craft/` | **선택 모듈** — ArtCraft 디자인 앱 6종 MCP. team은 설치 스크립트 + 프로젝트 스킬 사본(윈도우 상대용, 전역 스킬 `craft`의 변형 — 전역이 바뀌면 diff 해서 맞춘다), solo는 `.mcp.json`·CLAUDE 절만(전역 스킬 사용) |
 | `optional/film/` | **선택 모듈** — 영상 프로젝트 뼈대(`film/` 아래): `/update`·`tools/craft.sh`·폴더·영상용 BRAIN/STATE·`.mcp.json` 본. 옛 `film/_template` 흡수 |
+| `optional/post/` | **선택 모듈** — SNS 게시물 채널 뼈대(글 + 15~30초 세로 영상, 어디에 두든 혼자 섬): `docs/01_게시물/<날짜_슬러그>/post.md` 틀·세로·자막 기본·`tools/craft.sh`. film과 택1 |
 
 ## 전제
 

@@ -74,6 +74,11 @@ MODULES = {
         "snippets": ["optional/film/CLAUDE.snippet.md", "optional/film/settings.snippet.json", "optional/film/mcp.json.example",
                      "optional/film/skeleton"],
     },
+    # SNS 게시물형(글 + 짧은 세로 영상) — film 과 달리 상위 film/ 폴더를 전제하지 않는다. film 과 같이 켜지 않는다
+    "post": {
+        "files": [("optional/film/tools/craft.sh", "tools/craft.sh")],
+        "snippets": ["optional/post/CLAUDE.snippet.md", "optional/post/skeleton"],
+    },
 }
 
 PROFILE_DEFAULTS = {"solo": ["core"], "team": ["core", "team", "mockup"]}
@@ -180,17 +185,19 @@ def enable(module, root, profile, modules=()):
     notes = []
     if module == "craft":
         snip = "optional/craft/CLAUDE.snippet.md" if profile == "team" else "optional/craft/CLAUDE.snippet.solo.md"
-        if "film" in modules:
-            notes.append("크래프트 절은 film 절이 대신함 (edit/ 폴더 관례, 브리지 포트)")
+        media = "film" in modules or "post" in modules
+        if media:
+            notes.append("크래프트 절은 film/post 절이 대신함 (edit/ 폴더 관례, 브리지 포트)")
         elif _append_snippet(root / "CLAUDE.md", snip, "## 크래프트 앱"):
             notes.append("CLAUDE.md 에 '크래프트 앱' 절")
         merge_settings(root, {"enabledMcpjsonServers": ["vectorcraft", "photocraft", "effectcraft", "designcraft", "filmcraft", "soundcraft"]})
-        if "film" not in modules:  # film 은 edit/ 폴더 관례를 쓴다
+        if not media:  # film·post 는 edit/ 폴더 관례를 쓴다
             _gitignore_add(root, "# 크래프트 결과물 중 큰 것 (영상·오디오). 필요하면 개별로 git add -f\ncraft/out/*.mp4\ncraft/out/*.mov\ncraft/out/*.wav\n", "craft/out/")
             for d in ("craft/vector", "craft/photo", "craft/effect", "craft/design", "craft/film", "craft/sound", "craft/out", "img/candidates"):
                 (root / d).mkdir(parents=True, exist_ok=True)
             _gitignore_add(root, "# 이미지 후보(로컬 보관)\nimg/candidates/\n", "img/candidates/")
-        if profile == "solo" and not (root / ".mcp.json").exists():
+        # film/ 아래 채널은 film 이 브리지 포트 본을 쓴다 (--with 순서와 무관하게)
+        if profile == "solo" and not (root / ".mcp.json").exists() and not ("film" in modules and film_parent(root)):
             ex = (HARNESS / "optional/craft/mcp.json.example").read_text(encoding="utf-8")
             (root / ".mcp.json").write_text(ex.replace("<프로젝트 절대경로>", str(root.resolve())), encoding="utf-8")
             notes.append(".mcp.json (headless 6종, 이 폴더로 루트 제한)")
@@ -198,18 +205,35 @@ def enable(module, root, profile, modules=()):
     elif module == "film":
         if _append_snippet(root / "CLAUDE.md", "optional/film/CLAUDE.snippet.md", "## 영상 프로젝트"):
             notes.append("CLAUDE.md 에 '영상 프로젝트' 절")
-        merge_settings(root, json.loads((HARNESS / "optional/film/settings.snippet.json").read_text(encoding="utf-8")))
+        if film_parent(root):  # 업데이트 점검 훅은 film/tools 가 있을 때만 — 밖에 두면 훅이 매번 실패한다
+            merge_settings(root, json.loads((HARNESS / "optional/film/settings.snippet.json").read_text(encoding="utf-8")))
+        else:
+            notes.append("상위 film/ 폴더(README·tools)가 없음 → 업데이트 훅·포트 배정 생략. SNS 게시물형이면 film 대신 post 모듈")
         for d in ("docs/00_채널", "docs/01_회차", "docs/02_아이디어", "docs/03_편집", "media/원본", "media/내보내기/영상",
                   "media/내보내기/썸네일", "media/내보내기/이미지", "edit/film", "edit/effect", "edit/motion", "tools"):
             (root / d).mkdir(parents=True, exist_ok=True)
         # 영상용 BRAIN/STATE 뼈대는 optional/film/skeleton/ — install_profile 이 자리표시자를 채워 만든다
         if not (root / ".mcp.json").exists():
-            ex = (HARNESS / "optional/film/mcp.json.example").read_text(encoding="utf-8")
+            ex = (HARNESS / ("optional/film/mcp.json.example" if film_parent(root) else "optional/craft/mcp.json.example")).read_text(encoding="utf-8")
             (root / ".mcp.json").write_text(ex.replace("<프로젝트 절대경로>", str(root.resolve())), encoding="utf-8")
-            notes.append(".mcp.json — <film포트>·<effect포트> 를 film/README.md 배정표대로 채울 것")
+            notes.append(".mcp.json — <film포트>·<effect포트> 를 film/README.md 배정표대로 채울 것" if film_parent(root)
+                         else ".mcp.json (headless 6종, 이 폴더로 루트 제한)")
+    elif module == "post":
+        if _append_snippet(root / "CLAUDE.md", "optional/post/CLAUDE.snippet.md", "## SNS 게시물 프로젝트"):
+            notes.append("CLAUDE.md 에 'SNS 게시물 프로젝트' 절")
+        for d in ("docs/00_채널", "docs/01_게시물", "docs/02_아이디어", "docs/03_편집", "media/원본", "media/내보내기/영상",
+                  "media/내보내기/썸네일", "media/내보내기/이미지", "edit/film", "edit/effect", "edit/motion", "tools"):
+            (root / d).mkdir(parents=True, exist_ok=True)
+        # 게시물용 STATE·게시물 틀은 optional/post/skeleton/. .mcp.json 은 craft 모듈이 만든다(headless)
     elif module == "mockup":
         (root / "docs" / "design").mkdir(parents=True, exist_ok=True)
     return notes
+
+
+def film_parent(root):
+    """film/ 아래 채널인가 — 상위에 포트 배정표(README.md)와 업데이트 도구(tools/update-check.sh)가 있어야 한다."""
+    up = Path(root).resolve().parent
+    return (up / "README.md").exists() and (up / "tools" / "update-check.sh").exists()
 
 
 def fill(text, values):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """하네스 공용 파일을 프로젝트에 입히고(init) 갱신하고(sync) 뒤처짐을 알린다(check). 표준 라이브러리만.
 
-    python3 setup/sync.py init <프로젝트> --profile solo [--with film,craft] [--title "제목"] [--desc "한 줄"] [--bare]
+    python3 setup/sync.py init <프로젝트> --profile solo [--with craft,film|post] [--title "제목"] [--desc "한 줄"] [--bare]
         새 폴더든 기존 프로젝트든 하네스를 입힌다. 프로젝트 소유 파일(CLAUDE.md·BRAIN·STATE·settings)은 없을 때만 만들고,
         공용 파일은 복사하고, .claude/harness.json 을 쓰고, ~/.claude/harness-projects.txt 에 등록한다.
         --bare: 이미 돌아가는 프로젝트에 입힐 때 — CLAUDE.md 절 추가·폴더 생성 같은 enable 은 생략.
@@ -149,7 +149,10 @@ def init(root, profile, with_mods, title, desc, bare=False):
     if profile == "solo":
         import datetime
         made = M.install_profile(root, "solo", {"PROJECT_TITLE": title or root.name, "DESCRIPTION": desc or "",
-                                                 "DATE": datetime.date.today().isoformat()}, mods)
+                                                 "DATE": datetime.date.today().isoformat(),
+                                                 # film/ 아래 채널만 브리지 포트를 배정표에 적는다 (밖이면 headless .mcp.json 이라 할 일 없음)
+                                                 "FILM_PORT_TASK": "- [ ] `.mcp.json`의 `<film포트>`·`<effect포트>`를 `../README.md` 배정표에 적고 채우기\n"
+                                                 if M.film_parent(root) else ""}, mods)
         notes += [f"만듦: {f}" for f in made]
     else:
         M.merge_settings(root, {"hooks": {"SessionStart": [{"hooks": [{"type": "command", "command": M.CHECK_HOOK}]}]}})
@@ -166,7 +169,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("target", nargs="*")
     ap.add_argument("--profile", choices=["solo", "team"], default="solo")
-    ap.add_argument("--with", dest="with_mods", default="", help="모듈 목록 쉼표 구분: film,craft,mockup")
+    ap.add_argument("--with", dest="with_mods", default="", help="모듈 목록 쉼표 구분: craft,film,post,mockup (film·post 는 택1)")
     ap.add_argument("--title"); ap.add_argument("--desc")
     ap.add_argument("--bare", action="store_true", help="init: 기존 프로젝트에 manifest·점검 훅·공용 파일만 (CLAUDE.md 절·폴더 등 enable 생략)")
     ap.add_argument("--all", action="store_true"); ap.add_argument("--list", action="store_true")
@@ -191,6 +194,8 @@ def main():
         bad = [x for x in mods if x not in M.MODULES]
         if bad:
             sys.exit(f"모르는 모듈: {bad} (가능: {list(M.MODULES)})")
+        if "film" in mods and "post" in mods:
+            sys.exit("film 과 post 는 같이 켜지 않는다 — 유튜브 회차형은 film, SNS 게시물형은 post")
         return init(a.target[1], a.profile, mods, a.title, a.desc, bare=a.bare)
     targets = M.registered() if a.all else a.target
     if not targets:
