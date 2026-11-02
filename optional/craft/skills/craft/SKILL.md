@@ -83,6 +83,14 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
   - `export {artboard}`의 artboard 인덱스는 **0-based**. 아트보드별 SVG는 좌표가 그 아트보드 원점 기준으로 재배치돼 나온다 → 라이트/다크 아트보드의 SVG 경로가 같아 색만 치환하면 된다
 - 여러 문서: `document.activate {index}`. 상태 확인 `doc_inspect`/`document.inspect`(오브젝트 bounds·id)
 - 확인 `render_preview {artboard}` → 내보내기 `export {path, artboard|range, scale}`. `range`로 여러 아트보드면 파일명이 `<이름>-Artboard-N.<ext>`로 나뉜다(래스터는 `options:{useArtboards:true}`)
+- **픽셀 크기로 내보내기**(0.19+, 2026-11-02 headless 검증): `document.export {path, artboard, width:512}` → 512×512 (스키마 설명엔 없지만 동작)
+- **크기별 일괄 내보내기 `document.exportForScreens`**(검증):
+  - Android 런처 아이콘(108dp = 432px 아트보드): `{folder, artboards:[0], folders:"rows", name:"ic_launcher_foreground", formats:[{format:"png", width:108, folder:"mipmap-mdpi", suffix:""}, …162 hdpi, 216 xhdpi, 324 xxhdpi, 432 xxxhdpi]}` → `mipmap-*/ic_launcher_foreground.png`
+  - **`preset:"density"`는 아트보드 크기를 mdpi(1x)로 본다** → 432px 아트보드면 xxxhdpi가 1728px로 4배 크게 나온다. 런처 아이콘은 위처럼 width를 직접 주거나 아트보드를 dp 크기(108px)로
+  - iOS·웹 배율: `preset:"mobile"` → `1x/`·`2x/`·`3x/` 폴더에 `@2x`·`@3x` 접미사. 아트보드마다 한 벌씩(이름은 아트보드 이름 → `artboard.setProps {artboards:[{index, name}]}`로 먼저 붙인다)
+  - 행별 `folder`는 **`folders:"rows"`를 같이 줘야 적용**된다(없으면 한 폴더에 `-2`, `-3`으로 쌓인다)
+  - `width` 행의 기본 접미사는 `@1024w`, 배율 행은 `@2x` → 이름 패턴에 `<scale>`을 쓰면 `-2x@2x`처럼 겹치니 `suffix:""`
+  - 스토어 512px·1024px·SVG를 한 번에: `formats:[{format:"png", width:1024}, {format:"png", width:512, suffix:"_play"}, {format:"svg"}]`. `zip:true`면 한 zip으로
 - 조각별 투명 PNG(모션 소스용): 나머지를 `object.hide` 하고 같은 아트보드를 반복 export → 좌표가 그대로 맞는다
 - SVG export는 경로가 깔끔해(`d` 몇 줄) Compose `addPathNodes(d)`·Android VectorDrawable `pathData`·웹 SVG로 그대로 옮길 수 있다. 앱 아이콘은 108dp=432px 아트보드에 안전 영역(가운데 72dp 보임, 66dp 원) 안쪽으로
 - 앱 없이 한 번에: `vectorcraft-cli run --commands steps.jsonl --export out.svg` (`{"command","params"}` 한 줄씩, 앞 단계 결과는 `"$N.id"`로 참조, N은 0부터)
