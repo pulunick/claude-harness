@@ -1,6 +1,7 @@
 #!/bin/zsh
-# ArtCraft 앱을 Claude Code 제어 포트로 열기 — 포트는 프로젝트 .mcp.json 의 --bridge 값을 읽는다 (하네스 공용 파일, 프로젝트에서 고치지 않음)
+# ArtCraft 앱을 Claude Code 제어 포트로 열기 — 포트는 프로젝트 .mcp.json 의 --bridge·--connect 값을 읽는다 (하네스 공용 파일, 프로젝트에서 고치지 않음)
 # 사용: tools/craft.sh film|effect|vector
+# 포트: --bridge(Film·Effect) 또는 --connect(Vector) 값. VectorCraft가 인자 없는 `mcp`면 기본 7979에 붙으므로 7979
 # PhotoCraft·DesignCraft·SoundCraft는 앱 없이(헤드리스) 연결되므로 열 필요 없음. VectorCraft는 앱이 꺼져 있으면 헤드리스로 자동 전환
 ROOT="${0:A:h:h}"
 case "$1" in
@@ -13,13 +14,13 @@ port=$(python3 - "$ROOT/.mcp.json" "$server" <<'EOF'
 import json, re, sys
 try:
     s = json.dumps(json.load(open(sys.argv[1]))["mcpServers"][sys.argv[2]])
-    m = re.search(r'--bridge["\s,]+(?:127\.0\.0\.1:)?(\d+)', s)
-    print(m.group(1) if m else "")
+    m = re.search(r'--(?:bridge|connect)["\s,]+(?:127\.0\.0\.1:)?(\d+)', s)
+    print(m.group(1) if m else ("7979" if sys.argv[2] == "vectorcraft" and "automation-" not in s else ""))
 except Exception:
     print("")
 EOF
 )
-[[ -n $port ]] || { echo "$server 의 --bridge 포트를 .mcp.json 에서 못 찾음 (film/README.md 배정표대로 적을 것)"; exit 1; }
+[[ -n $port ]] || { echo "$server 의 --bridge/--connect 포트를 .mcp.json 에서 못 찾음 (film/README.md 배정표대로 적을 것)"; exit 1; }
 
 if pgrep -xq "$app"; then
   echo "$app 이(가) 이미 켜져 있음. 종료(Cmd+Q) 후 다시 실행"

@@ -55,7 +55,16 @@ function Install-App([string]$app) {
     Write-Host "  [$app] 이미 있음: $existing" -ForegroundColor DarkGray
     return $existing
   }
-  $rel = Invoke-RestMethod "https://api.github.com/repos/storytold/$app/releases/latest" -Headers @{ "User-Agent" = "claude-harness-setup" }
+  # 비인증 API는 시간당 60회라 403이 날 수 있다 → gh 로그인돼 있으면 gh api, 아니면 GITHUB_TOKEN 있으면 실어 보냄
+  $ghOk = $false
+  if (Get-Command gh -ErrorAction SilentlyContinue) { gh auth status *> $null; $ghOk = ($LASTEXITCODE -eq 0) }
+  if ($ghOk) {
+    $rel = gh api "repos/storytold/$app/releases/latest" | ConvertFrom-Json
+  } else {
+    $hdr = @{ "User-Agent" = "claude-harness-setup" }
+    if ($env:GITHUB_TOKEN) { $hdr["Authorization"] = "Bearer $env:GITHUB_TOKEN" }
+    $rel = Invoke-RestMethod "https://api.github.com/repos/storytold/$app/releases/latest" -Headers $hdr
+  }
   $asset = $rel.assets | Where-Object { $_.name -like "*-windows-$arch-portable.zip" } | Select-Object -First 1
   if (-not $asset) { throw "[$app] $($rel.tag_name) 릴리스에 windows-$arch-portable.zip 이 없음" }
 

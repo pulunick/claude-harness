@@ -89,7 +89,7 @@ claude      # → /start
 | `setup/` | `init.py`(team 초기화) · `sync.py`(solo 초기화·공용 파일 전파·뒤처짐 점검) · `modules.py`(공용/소유 표, 모듈 켜기) · `common/link_memory.py`(신원·메모리 링크·훅 경로) · `common/statusline.py` · `README.md`(기기별 설치) · `windows/bootstrap-prompt.md` |
 | `profiles/solo/` | solo 프로필의 소유 파일 뼈대 (CLAUDE.md·BRAIN·STATE·settings·doc-keeper) |
 | `.github/` | 이슈·PR 템플릿 (`/issue`와 같은 틀) |
-| `optional/craft/` | **선택 모듈(작성자 환경)** — ArtCraft 디자인 앱 6종 MCP. team은 설치 스크립트 + 프로젝트 스킬 사본(윈도우 상대용, 전역 스킬 `craft`의 변형 — 전역이 바뀌면 diff 해서 맞춘다), solo는 `.mcp.json`·CLAUDE 절만(전역 스킬 사용) |
+| `optional/craft/` | **선택 모듈(작성자 환경)** — ArtCraft 디자인 앱 6종 MCP. team은 설치 스크립트 + 프로젝트 스킬 사본(윈도우 상대용, 전역 스킬 `craft`와 같은 내용의 사본 — 한쪽을 고치면 그대로 복사해 맞춘다, 2026-11-02 합침), solo는 `.mcp.json`·CLAUDE 절만(전역 스킬 사용) |
 | `optional/film/` | **선택 모듈(작성자 환경)** — 영상 프로젝트 뼈대(`film/` 아래): `/update`·`tools/craft.sh`·폴더·영상용 BRAIN/STATE·`.mcp.json` 본. 옛 `film/_template` 흡수 |
 | `optional/post/` | **선택 모듈(작성자 환경)** — SNS 게시물 채널 뼈대(글 + 15~30초 세로 영상, 어디에 두든 혼자 섬): `docs/01_게시물/<날짜_슬러그>/post.md` 틀·세로·자막 기본·`tools/craft.sh`. film과 택1 |
 

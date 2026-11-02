@@ -23,7 +23,14 @@ install_cli() {
   local app="$1" cli="$BIN/$app-cli"
   if [[ -x "$cli" && $FORCE -eq 0 ]]; then echo "  [$app] 이미 있음: $cli"; return; fi
   local json url tag
-  json="$(curl -fsSL -H 'User-Agent: claude-harness-setup' "https://api.github.com/repos/storytold/$app/releases/latest")"
+  # 비인증 API는 시간당 60회라 쉽게 403 → gh 로그인돼 있으면 gh api, 아니면 GITHUB_TOKEN 있으면 실어 보냄
+  if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+    json="$(gh api "repos/storytold/$app/releases/latest")" || { echo "  [$app] 릴리스 조회 실패(gh api)" >&2; return 1; }
+  else
+    local auth=(); [[ -n "${GITHUB_TOKEN:-}" ]] && auth=(-H "Authorization: Bearer $GITHUB_TOKEN")
+    json="$(curl -fsSL -H 'User-Agent: claude-harness-setup' ${auth[@]+"${auth[@]}"} "https://api.github.com/repos/storytold/$app/releases/latest")" \
+      || { echo "  [$app] 릴리스 조회 실패 — 403이면 API 한도(시간당 60회). gh auth login 또는 GITHUB_TOKEN 설정 후 다시" >&2; return 1; }
+  fi
   tag="$(printf '%s' "$json" | python3 -c 'import json,sys; print(json.load(sys.stdin)["tag_name"])')"
   url="$(printf '%s' "$json" | python3 -c '
 import json,sys
