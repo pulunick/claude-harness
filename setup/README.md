@@ -30,6 +30,9 @@
    winget install --id GitHub.cli
    gh auth login        # GitHub.com → HTTPS → 브라우저 로그인
    ```
+
+   > 브라우저 로그인·붙여넣기가 필요한 명령(`gh auth login`·`claude setup-token` 등)은 **터미널 앱에서 직접** 친다. Claude Code 프롬프트의 `! 명령`은 TTY가 없어 입력을 못 받고 빈 결과로 끝난다.
+
 7. **Claude Code 시작** — 저장소 폴더에서 `claude`. 세션 시작 훅이 `[하네스]` 블록(내 신원·최근 커밋 작업자·메모리 링크 상태)을 찍는다. 첫 세션에서 할 말: **`/start`**. 세션을 끝낼 땐 **`/wrap`**.
 8. (선택) **statusline** — 컨텍스트·사용량 막대. `setup/common/statusline.py`를 `C:\Users\<이름>\.claude\statusline.py`로 복사하고 `~/.claude/settings.json`에
    ```json
