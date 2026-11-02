@@ -50,6 +50,11 @@ def dirty():
     return bool(out.strip())
 
 
+def _lf(b):
+    # .gitattributes 의 *.ps1 eol=crlf 처럼 작업 사본은 CRLF, git show 는 LF → 줄바꿈 차이는 같은 것으로
+    return b.replace(b"\r\n", b"\n") if b is not None else None
+
+
 def sync_project(root, dry=False, force=False, quiet=False):
     root = Path(root).resolve()
     m = M.read_manifest(root)
@@ -65,13 +70,13 @@ def sync_project(root, dry=False, force=False, quiet=False):
             continue
         s = s_path.read_bytes()
         d = root / dst
-        if d.exists() and d.read_bytes() == s:
+        if d.exists() and _lf(d.read_bytes()) == _lf(s):
             same += 1
             continue
         base = show(base_commit, src) if base_commit else None
         if not d.exists():
             added.append(dst)
-        elif force or (base is not None and d.read_bytes() == base):
+        elif force or (base is not None and _lf(d.read_bytes()) == _lf(base)):
             updated.append(dst)
         else:
             conflicts.append(dst)
