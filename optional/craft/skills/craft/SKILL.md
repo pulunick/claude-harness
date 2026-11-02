@@ -101,7 +101,12 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 - 셰이프 경로 키프레임 값: `{closed, in_tangents, out_tangents, vertices}` (vertices는 **레이어 좌표** = comp 좌표 − 레이어 position). 꼭짓점 수가 같으면 모양 변형(morph)
 - `add_keyframe {layer,path,keys:[{time,value}],interpolation:"easyEase"}`, 확인 `render_frame {time}`
 - 렌더: `renderQueue.add {comp, format:"h264", output}` → `renderQueue.render {wait:true}`. 같은 출력으로 다시 렌더할 땐 `renderQueue.remove {index}` 먼저. 프로젝트 저장 `save_project {path:".ecproj"}`. 루트 제한 시 함정 7
-- comp 전체 크기 바꾸기는 `comp.scale`(레이어·키·카메라까지 한 배율, 0.19+)
+- comp 전체 크기 바꾸기는 `comp.scale {comp, factor | width | height}`(레이어 위치·키·카메라까지 한 배율, 0.19+). **비율은 유지** — 정사각 → 세로 같은 비율 변경은 안 된다(2026-11-02 검증)
+- **내장 애니메이션 프리셋 68종**(`anim.builtinPresets` 목록 → `anim.applyBuiltinPreset {preset, layers:[id]}`, 2026-11-02 headless 검증): Transitions 23(`fadeIn`·`lensPopIn`·`wipeInFromLeft`·`cardFlipIn`…) · Behaviors 22(`pulse`·`breathe`·`floatUpDown`·`spinSlow`·`wiggleSoft`·`heartbeat`…) · Backgrounds 23(`softGradientDrift`·`auroraVeil`·`bokehDrift`…). 스플래시·온보딩 모션 시안에 적합
+  - **Behaviors는 transform에 익스프레션**을 넣는다(`pulse` = scale에 sin, `spinSlow` = `value + time*36`). 결과의 `effects`가 `[]`여도 적용된 것 → `get <comp> <layer> transform/scale --json`의 `expression`으로 확인. **같은 속성의 Behavior를 또 붙이면 앞의 것을 덮어쓴다**(pulse → breathe면 breathe만)
+  - Transitions는 키프레임(`fadeIn` = opacity 0→100, 0.5초)이나 이펙트(`lensPopIn`)로 들어가 Behavior와 겹쳐 쓸 수 있다
+  - 텍스트는 별도 `layer.applyTextPreset {layer, preset: typewriter|fadeUpCharacters|bounceInWords|trackingIn|scramble|blurIn|jitter|dropInLines}`
+  - CLI 한 번에: `effectcraft-cli --project a.ecproj run anim.applyBuiltinPreset '{"preset":"pulse","layers":[2]}' … --save-as b.ecproj` → `render --comp <이름> --out x.mp4 --format h264`(1080² 3초 ≈ 0.5초). 레이어 id는 `info`로(`layer.arrange`에 음수 인덱스는 안 된다)
 - 스케일로 늘리면 위 레이어(작은 부품)도 같이 찌그러진다 → 움직이는 부품은 별도 레이어로
 
 ### DesignCraft
@@ -109,6 +114,10 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 
 ### PhotoCraft
 - `doc_open`/`doc_new` → `command_list`로 id 확인 → `command_run`(한 명령 = 한 히스토리) → `render_preview` → `doc_save`(확장자로 export 형식 결정). 경로는 read/write root 기준 상대경로(절대경로도 루트 안이면 됨, 0.18+)
+- **레이어별 PNG(UI 에셋 추출)**(2026-11-02 검증): MCP `doc_export_layers {dir, prefix}`는 레이어마다 **문서 전체 크기** PNG. **투명 여백을 잘라 내용 크기로 뽑으려면 엔진 명령 `file.export.layersToFiles {dir, trim:true}`인데, MCP 헤드리스(루트 제한)에선 "ambient filesystem paths"라 막힌다** → CLI로: `photocraft-cli run ui.psd --cmd file.export.layersToFiles --params '{"dir":"out","trim":true}'` (60×60 배지, 200×200 아바타, 800×160 버튼처럼 정확히, 바깥은 완전 투명)
+  - 파일명은 `<prefix>_0000_<레이어명>.png`로 번호가 붙고(`prefix:""`면 `layer_`), 번호는 못 뺀다 → 내보낸 뒤 이름 정리
+  - 비어 있는 레이어(새 문서의 기본 "Layer 1")도 문서 전체 크기로 같이 나온다 → 지우고 내보내거나 결과에서 버린다
+  - 새 문서: `photocraft-cli run --new '{"width":1080,"height":1920,"background":"transparent"}' --cmd layer.new.layer --params '{"name":"btn"}' --cmd select.rect --params '{"x":…,"y":…,"width":…,"height":…,"ellipse":false}' --cmd edit.fill --params '{"contents":"color","color":"#3B6BF5"}' … --out ui.psd`
 
 ### FilmCraft
 - 시간 단위는 ticks (1초 = 254016000000). 명령은 `seconds`·`frame`·`timecode`로도 받는다
