@@ -43,14 +43,14 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 
   | 앱 | bridge 플래그 | 비고 |
   |---|---|---|
-  | VectorCraft | `--connect 127.0.0.1:<port>` (`--bridge`는 오류) | **인자 없는 `mcp`는 7979의 앱에 붙고, 앱이 없으면 headless로 자동 전환** — 루트 플래그를 주면 headless 고정 |
+  | VectorCraft | `--connect 127.0.0.1:<port>` (`--bridge`는 오류) | **인자 없는 `mcp`는 7979의 앱에 붙고, 앱이 없으면 headless로 자동 전환** — 루트 플래그를 주면 headless 고정. **이 선택은 MCP 서버가 뜰 때 한 번만** 한다 → 세션을 연 뒤 앱을 켜면 headless 그대로라 `ui_screenshot`이 "needs the desktop app" → 앱을 먼저 켜고 세션을 열거나 `/mcp` 재연결(붙으면 `Backend: remote 127.0.0.1:7979`, for-her 2026-11-02) |
   | PhotoCraft | `--bridge <port>` + `--control-token`/`--control-token-file` | bridge에선 루트 플래그 거부(루트는 앱 설정에서). 앱 설정 Integrations의 Allow Agent Control·Control Port(0.17+) |
   | EffectCraft | `--bridge <port>` | |
   | DesignCraft | `--connect <port>` | |
   | FilmCraft | `--bridge 127.0.0.1:<port>` | 제어 토큰 필수(아래) |
   | SoundCraft | `--connect <port>` | 루트·`--demo`와 같이 못 씀 |
 
-  - **FilmCraft 0.13+는 제어 토큰 필수**: 앱을 `open --env FILMCRAFT_CONTROL_TOKEN=<64자리 hex> -a FilmCraft --args --control <port>`로 띄우고, MCP도 같은 값을 env로(`.mcp.json`에서 `/bin/zsh -c 'FILMCRAFT_CONTROL_TOKEN=$(<토큰파일) exec filmcraft-cli mcp --bridge …'`). 토큰 없이 띄우면 포트가 안 열려 `Connection refused`, 값이 다르면 `control authentication failed`. 토큰은 저장소 밖 파일(`~/.config/artcraft/filmcraft-control-token`)에. 하네스 film 모듈의 `tools/craft.sh film|effect|vector`가 포트를 `.mcp.json`에서 읽어 토큰까지 맞춰 띄운다
+  - **FilmCraft 0.13+는 제어 토큰 필수**: 앱을 `open --env FILMCRAFT_CONTROL_TOKEN=<64자리 hex> -a FilmCraft --args --control <port>`로 띄우고, MCP도 같은 값을 env로(`.mcp.json`에서 `/bin/zsh -c 'FILMCRAFT_CONTROL_TOKEN=$(<토큰파일) exec filmcraft-cli mcp --bridge …'`). 토큰 없이 띄우면 포트가 안 열려 `Connection refused`, 값이 다르거나 없으면 `control authentication failed; closing the connection`(0.16도 같음). 토큰은 저장소 밖 파일(`~/.config/artcraft/filmcraft-control-token`)에. 하네스 film 모듈의 `tools/craft.sh film|effect|vector`가 포트를 `.mcp.json`에서 읽어 토큰까지 맞춰 띄운다
   - **포트가 겹치면 다른 세션의 앱을 가로챈다.** 작성자 기기 점유: FilmCraft 9876 · EffectCraft 9877 · VectorCraft 7979 = for-her 전용. 다른 프로젝트는 headless를 쓰거나 다른 포트를 골라 STATE·이 목록에 적는다. VectorCraft를 인자 없이 붙이면 for-her 앱(7979)에 붙을 수 있으니 다른 프로젝트는 루트 플래그를 꼭 준다
 - `.mcp.json`은 기기별 절대경로라 커밋하지 않는다. 등록·변경 후 **세션 재시작 + 서버 승인** 필요. `/mcp`에서 connected 확인
 
@@ -65,7 +65,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 ## 공통 함정
 
 1. **export/save 대상 폴더를 자동 생성하지 않는다** → 새 하위 폴더는 먼저 만든다(맥 `mkdir -p`, 윈도우 `New-Item -ItemType Directory -Force`)
-2. **DesignCraft 기본 폰트(Source Serif 4)는 한글이 □** → 한글 폰트 지정(`font.replace` 또는 `type.char {attrs:{fontFamily:"Apple SD Gothic Neo" | "Malgun Gothic"}}`). EffectCraft 기본 폰트는 한글 정상. 같은 문서를 두 OS에서 열면 폰트가 서로 없을 수 있으니 PDF/PNG로 내보낸 결과를 공유
+2. **DesignCraft 기본 폰트(Source Serif 4)는 한글이 □**(0.16에서도 그대로, 2026-11-02 재확인) → **문서를 만들자마자 기본 문단 스타일을 바꾼다**: `execute style.paragraph.edit {name:"[Basic Paragraph]", chars:{fontFamily:"Apple SD Gothic Neo" | "Malgun Gothic", size:…}}` → 이후 만드는 텍스트 프레임이 전부 한글 정상. 스타일 이름은 대괄호 포함(`"Basic Paragraph"`는 "no style"). `font.replace {family:"Source Serif 4", toFamily:…}`는 **이미 있는 텍스트만** 바꾸고 뒤에 만든 프레임은 다시 □. `type.char {attrs:{…}}`는 선택된 텍스트에만 적용되고 크기도 `attrs` 안(`{size:24}`처럼 바깥에 두면 무시). EffectCraft 기본 폰트는 한글 정상. 같은 문서를 두 OS에서 열면 폰트가 서로 없을 수 있으니 PDF/PNG로 내보낸 결과를 공유
 3. 앱 본체에 `--help`를 주면 창이 뜬다(DesignCraft는 파일로 해석) → 도움말은 `*-cli`로(DesignCraft는 `designcraft-cli mcp --help`도 오류 → 오류 메시지의 usage를 본다). `--version` 형식이 앱마다 다르다(`photocraft-cli 0.19.0 (해시, 날짜)`, `soundcraft-cli 0.16.0 (macos aarch64)` — 0.13까진 `SoundCraft CLI x.y.z`) → 버전은 숫자 패턴으로 뽑는다
 4. 앱을 업데이트하면 CLI도 같은 버전으로(맥 `install-craft.sh --force`). CLI는 `~/.local/bin` 하나를 모든 프로젝트가 같이 쓰므로 한 번 교체하면 전부 적용되지만, **이미 열려 있는 세션의 MCP 프로세스는 옛 바이너리로 계속 돈다** → 그 세션에서 `/mcp`로 재연결하거나 새 세션. 릴리스 조회는 GitHub API라 **비인증 시간당 60회 한도에 걸리면 403** → 스크립트는 `gh api`(로그인 시)나 `GITHUB_TOKEN`을 쓴다
 5. 명령 id는 짐작하지 말고 목록 도구로 찾는다 — `command_list`(Vector·Photo·Film·Effect) / `list_commands`(Vector·Effect·Design·Sound, EffectCraft는 `compact:true`). CLI로는 `<cli> commands`(Film은 `commands <필터> --json`, `describe <id>`). 짐작이 틀렸던 예: 삭제는 `object.delete`가 아니라 VectorCraft `layer.delete {ids}` / EffectCraft `edit.clear {layers}`, 정렬은 `object.arrange.bringToFront` / EffectCraft `layer.arrange {layers,to|above}`. **단위도 params 설명에서 확인**(VectorCraft `object.scale`의 `sx`는 %)
@@ -110,10 +110,15 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 - 스케일로 늘리면 위 레이어(작은 부품)도 같이 찌그러진다 → 움직이는 부품은 별도 레이어로
 
 ### DesignCraft
-- `new_document` → `execute frame.create {rect,content:"text",text}` → 한글 폰트 지정(함정 2) → `render_page`로 확인 → PDF/PNG export. 좌표는 포인트(Letter 612×792, y 아래로)
+- `new_document` → 기본 문단 스타일에 한글 폰트(함정 2) → `execute frame.create {rect,content:"text",text}` → `render_page`로 확인 → PDF/PNG export. 좌표는 포인트(Letter 612×792, y 아래로)
 
 ### PhotoCraft
 - `doc_open`/`doc_new` → `command_list`로 id 확인 → `command_run`(한 명령 = 한 히스토리) → `render_preview` → `doc_save`(확장자로 export 형식 결정). 경로는 read/write root 기준 상대경로(절대경로도 루트 안이면 됨, 0.18+)
+- **배경 제거 `layer.removeBackground {refine:true}`**(2026-11-02 검증): 별도 모델 다운로드 없이 헤드리스에서 0.2초(2816×1536). 크림색 배경의 일러스트 시트에서 캐릭터 6개를 한 번에 깔끔히 → `photocraft-cli run in.png --cmd layer.removeBackground --params '{}' --out out.png`(마스크는 PNG 저장 때 합쳐짐)
+  - **배경색과 비슷한 부분(크림 배경 위 흰 모자·거품기)은 같이 지워진다** → 결과를 마젠타 등 대비색 위에 합성해 확인. 흰 요소가 중요하면 Codex 크로마키(초록 배경 생성) 쪽이 낫다
+  - `select.object {point}`(클릭한 물체)는 **선화 일러스트엔 못 쓴다** — 얼굴 채색이나 몸통처럼 한 영역만 잡고 외곽선은 구멍. 사진용으로 보이며 사진으론 미검증
+  - 시트에서 캐릭터를 하나씩 떼어 내는 건 사각 선택으론 이웃이 섞인다 → 처음부터 한 장에 하나씩 생성하는 편이 낫다
+  - 레이어 지정은 id로: PNG를 열면 원본은 "Background"가 아니라 `Layer 0`(id 2). `layer.delete {layer:id}`(키가 `layers`면 무시되고 선택 레이어가 지워진다)
 - **레이어별 PNG(UI 에셋 추출)**(2026-11-02 검증): MCP `doc_export_layers {dir, prefix}`는 레이어마다 **문서 전체 크기** PNG. **투명 여백을 잘라 내용 크기로 뽑으려면 엔진 명령 `file.export.layersToFiles {dir, trim:true}`인데, MCP 헤드리스(루트 제한)에선 "ambient filesystem paths"라 막힌다** → CLI로: `photocraft-cli run ui.psd --cmd file.export.layersToFiles --params '{"dir":"out","trim":true}'` (60×60 배지, 200×200 아바타, 800×160 버튼처럼 정확히, 바깥은 완전 투명)
   - 파일명은 `<prefix>_0000_<레이어명>.png`로 번호가 붙고(`prefix:""`면 `layer_`), 번호는 못 뺀다 → 내보낸 뒤 이름 정리
   - 비어 있는 레이어(새 문서의 기본 "Layer 1")도 문서 전체 크기로 같이 나온다 → 지우고 내보내거나 결과에서 버린다
@@ -124,7 +129,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 - 편집 루프: `sequence_inspect`로 id 확인 → `command_run` → `render_frame`(bridge면 `ui_screenshot`)으로 확인 → 틀리면 `edit.undo`
 - 원본 확인은 `project_inspect`(빈·아이템 id·길이). 앱을 처음 띄우면 데모 프로젝트("FilmCraft Demo")가 열려 있으니 새 프로젝트로 시작
 - **bridge 모드의 `render_frame`은 창 스크린샷**이라 `seconds` 인자가 안 먹고 창이 가려지면 "no frame was presented" → `playhead.set {seconds}` 후 호출하거나, 시간 지정은 `file.exportFrame {path, time}`, 구간 확인은 `file.exportMedia {range:"custom", startSeconds, endSeconds, scale:0.5, wait:true}`(43초 반해상도 ≈ 8초)로 뽑아 ffmpeg 컨택트 시트
-- **키프레임 대량 주입은 CLI**: `{"id","params"}` 한 줄씩 jsonl → `filmcraft-cli --bridge 127.0.0.1:<port> --keep-going run kf.jsonl` (MCP `command_batch`는 `steps`, 큰 JSON을 도구 호출에 싣기 부담). `effects.setParam {clip, effect:"motion", param:"position", value:[x,y], time:<시퀀스 ticks>, keyframe:true}`
+- **키프레임 대량 주입은 CLI**: `{"id","params"}` 한 줄씩 jsonl → `filmcraft-cli --bridge 127.0.0.1:<port> --keep-going run kf.jsonl` (MCP `command_batch`는 `steps`, 큰 JSON을 도구 호출에 싣기 부담). `--keep-going`은 실패한 줄을 건너뛰고 끝까지 돌지만 **한 줄이라도 실패하면 종료 코드 1** → 스크립트에서 성공 판정은 출력의 실패 줄로. `effects.setParam {clip, effect:"motion", param:"position", value:[x,y], time:<시퀀스 ticks>, keyframe:true}`
 - **키프레임 전부 지우기는 `effects.toggleAnimation`** — `effects.resetParam`은 키프레임을 안 지우고 값만 되돌린다
 - **마스크 키프레임**은 `effects.setParam {clip, effect, param:"path"|"opacity"|"feather", mask:n, value, time, keyframe:true}` (`masks.set`의 `time`은 키프레임을 안 만들고 정적값만 바꾼다). 타원 path는 꼭짓점 4개 + 핸들 0.5523·반지름. 지우기도 `effects.toggleAnimation {…, mask:n}`
 - `masks.track`은 빠르지만(90프레임 1.9초) 피사체가 화면 밖으로 반쯤 나가는 핸드헬드 컷에선 몇 초 만에 놓친다 → 얼굴 따라가기는 OpenCV YuNet 검출+옵티컬 플로우로 매 프레임 키프레임이 안정적(for-her `tools/face_track.py`, `face_overlay_keyframes.py`, 검수 `contact_sheet.py`)
