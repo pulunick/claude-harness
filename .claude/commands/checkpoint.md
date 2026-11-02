@@ -14,6 +14,11 @@ description: BRAIN.md(확정 사항)와 STATE.md(진행 상태)를 현재 세션
 4. 두 파일의 "마지막 갱신" 날짜를 오늘로 바꾼다. 루트에 새 문서가 생겼다면 CLAUDE.md의 문서 위치 규칙대로 `docs/` 아래로 옮긴다.
 5. 장기 기억에 저장할 가치가 있는 새 사실(작업 규칙·선호·프로젝트 방향 전환)이 있으면 메모리에 기록한다 — 저장소에 **공유 메모리 `.claude/memory/`**가 있으면 그 규약(`README.md`)대로 거기에(개인 사정은 `local_` 접두), 없으면 자동 메모리에. 프로젝트와 무관한 교훈(도구 함정, 작업 방식, 하네스 개선)은 **하네스 템플릿 되가져갈 후보**로 보고에 적는다.
 6. 커밋은 `.claude/harness.json`의 `profile`로 가른다:
-   - **solo**: 문서만 바로 커밋한다 — 경로를 지정해 `git add .claude/BRAIN.md .claude/STATE.md docs/log/*` + 이 세션이 고친 `docs/` 문서(코드 파일은 넣지 않는다). 메시지는 `체크포인트 YYYY-MM-DD: <한 줄>`. 푸시는 하지 않는다. 경로 지정이라 다른 세션의 미커밋 코드와 섞이지 않는다
+   - **solo**: 문서만 바로 커밋한다 — 경로를 지정해 `git add .claude/BRAIN.md .claude/STATE.md docs/log/*` + 이 세션이 고친 `docs/` 문서(코드 파일은 넣지 않는다). 메시지는 `체크포인트 YYYY-MM-DD: <한 줄>`. 경로 지정이라 다른 세션의 미커밋 코드와 섞이지 않는다. 커밋 뒤 **현재 브랜치를 push**한다(2026-11-02 사용자 결정):
+     - 원격(`git remote`)이 없으면 건너뛰고 "원격 없음"만 보고한다.
+     - 먼저 `git fetch`, 그리고 `git rev-list --count HEAD..@{u}`(upstream이 없으면 `HEAD..origin/<브랜치>`, 그것도 없으면 0)가 1 이상이면 **push하지 않고** "원격에 새 커밋 N개 — pull 후 다시"라고 보고만 한다. 자동 병합·rebase·`--force`는 하지 않는다.
+     - push 전 범위를 기록해 둔다: `before=$(git rev-parse --short @{u} 2>/dev/null)`(없으면 "새 브랜치"). push는 단독 Bash로 `git push`(upstream 없으면 `git push -u origin <브랜치>`).
+     - push 뒤 `git status -sb`로 원격과 같아졌는지 확인하고, 보고에 **올라간 범위 `<before>..<after>`와 커밋 수**를 적는다. 두 세션 체제면 상대 세션의 아직 승인 안 된 커밋도 함께 올라갈 수 있다 — 범위로 알 수 있게 하는 것이 목적이다.
+     - 네트워크·인증 실패면 체크포인트(커밋)는 완료로 두고, 실패 사실과 에러 한 줄만 보고한다. 재시도·다른 방법 우회는 하지 않는다.
    - **team**(또는 harness.json 없음): 커밋·푸시는 하지 않는다 — 그건 `/wrap`의 몫이다
 7. 마지막에 변경 요약을 사용자에게 보고한다. $ARGUMENTS
