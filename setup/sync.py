@@ -86,6 +86,10 @@ def sync_project(root, dry=False, force=False, quiet=False):
             d.write_bytes(s)
             if s_path.stat().st_mode & 0o111:
                 d.chmod(d.stat().st_mode | 0o111)
+    # 커밋 가드 훅은 settings.json(소유) 안이지만 하네스가 맞춘다 — pre_gate.py 를 받는 프로젝트만
+    gate = False
+    if not dry and (root / "tools/harness/pre_gate.py").exists():
+        gate = M.ensure_gate_hook(root)
     # 프로젝트 소유 파일에 합쳐진 조각이 바뀌었으면 손으로 볼 것
     changed_snips = []
     if base_commit and base_commit != cur:
@@ -95,7 +99,7 @@ def sync_project(root, dry=False, force=False, quiet=False):
                 changed_snips.append(sn)
     if not dry and not conflicts:
         M.write_manifest(root, profile, mods, cur)
-    if quiet and not (added or updated or conflicts or changed_snips):
+    if quiet and not (added or updated or conflicts or changed_snips or gate):
         return 0
     tag = "(dry-run) " if dry else ""
     print(f"{tag}{root.name} [{profile}: {','.join(mods)}] 동일 {same}" +
@@ -107,6 +111,8 @@ def sync_project(root, dry=False, force=False, quiet=False):
         print(f"  ↻ {f}")
     for f in conflicts:
         print(f"  ⚠ {f} — 프로젝트에서 손댄 공용 파일. 하네스로 되가져가거나 --force 로 덮어쓴다")
+    if gate:
+        print("  ↻ .claude/settings.json — 커밋 가드 훅(PreToolUse pre_gate) 맞춤")
     for sn in changed_snips:
         print(f"  ✎ {sn} 이 바뀜 — 프로젝트 소유 파일(CLAUDE.md/settings.json/.mcp.json)에 손으로 반영할지 확인")
     if conflicts and not dry:

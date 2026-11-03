@@ -27,6 +27,47 @@ HOME_FILE = Path.home() / ".claude" / "harness-home"
 CHECK_HOOK = ("sh -c 'h=$(cat ~/.claude/harness-home 2>/dev/null); [ -n \"$h\" ] && [ -f \"$h/setup/sync.py\" ] "
               "&& python3 \"$h/setup/sync.py\" --check \"$CLAUDE_PROJECT_DIR\"; exit 0'")
 
+# PreToolUse 커밋 가드 — git 명령에만(if), 가드가 못 돌면(python 없음·오류·10초 초과) 그 git 명령을 막는다(onFailure, v2.1.295+).
+# 옛 Claude Code 는 if·onFailure 를 모르면 무시 → 모든 Bash 에 돌고, 고장 시 exit 1 은 비차단 오류라 통과(종전과 같음).
+GATE_HOOK = {
+    "type": "command",
+    "if": "Bash(git *)",
+    "timeout": 10,
+    "onFailure": "block",
+    "command": "sh -c 'for p in python3 python; do \"$p\" -c \"import sys\" >/dev/null 2>&1 && exec \"$p\" \"$CLAUDE_PROJECT_DIR/tools/harness/pre_gate.py\"; done; "
+               "echo \"[하네스] python 없음 — pre_gate 를 못 돌려 git 명령을 막음\" >&2; exit 1'",
+}
+
+
+def ensure_gate_hook(root):
+    """settings.json 의 pre_gate 훅을 GATE_HOOK 하나로 맞춘다(옛 형태는 교체, 없으면 추가). 바뀌었으면 True.
+    settings.json 은 프로젝트 소유지만 이 훅 한 항목만은 하네스가 관리한다."""
+    p = Path(root) / ".claude" / "settings.json"
+    cfg = json.loads(p.read_text(encoding="utf-8")) if p.exists() else {}
+    pre = cfg.setdefault("hooks", {}).setdefault("PreToolUse", [])
+    found = False
+    for entry in pre:
+        hooks = entry.get("hooks", [])
+        for i, h in enumerate(hooks):
+            if "pre_gate.py" in (h.get("command") or ""):
+                if found:
+                    hooks[i] = None  # 중복 제거
+                else:
+                    entry["matcher"] = "Bash"
+                    hooks[i] = dict(GATE_HOOK)
+                    found = True
+        entry["hooks"] = [h for h in hooks if h]
+    pre[:] = [e for e in pre if e.get("hooks")]
+    if not found:
+        pre.append({"matcher": "Bash", "hooks": [dict(GATE_HOOK)]})
+    new = json.dumps(cfg, ensure_ascii=False, indent=2) + "\n"
+    if p.exists() and p.read_text(encoding="utf-8") == new:
+        return False
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(new, encoding="utf-8")
+    return True
+
+
 OWNED = ["CLAUDE.md", ".claude/BRAIN.md", ".claude/STATE.md", ".claude/settings.json", ".mcp.json"]
 
 
@@ -38,13 +79,14 @@ def _same(*rels):
 MODULES = {
     "core": {
         # doc-keeper 에이전트는 프로젝트 문서 목록을 품으므로 소유 파일(프로필 뼈대에서 한 번 생성)
-        "files": _same(".claude/commands/checkpoint.md", ".claude/commands/role.md"),
+        # pre_gate 는 solo 에도 — 두 세션 체제에서 한 세션의 commit -a·reset --hard 가 다른 세션 작업을 쓸어 간다 (2026-11-03)
+        "files": _same(".claude/commands/checkpoint.md", ".claude/commands/role.md", "tools/harness/pre_gate.py"),
         "snippets": ["profiles/solo/.claude/agents/doc-keeper.md", "profiles/solo/CLAUDE.md"],
     },
     "team": {
         "files": _same(
             ".claude/commands/start.md", ".claude/commands/wrap.md", ".claude/commands/issue.md",
-            "tools/harness/session_start.py", "tools/harness/pending.py", "tools/harness/pre_gate.py", "tools/harness/doctor.py",
+            "tools/harness/session_start.py", "tools/harness/pending.py", "tools/harness/doctor.py",
             ".githooks/pre-commit", ".githooks/prepare-commit-msg",
             "setup/common/link_memory.py", "setup/common/statusline.py", "setup/common/claude-settings.example.json",
             ".claude/memory/README.md", ".github/ISSUE_TEMPLATE/problem.md", ".github/PULL_REQUEST_TEMPLATE.md",

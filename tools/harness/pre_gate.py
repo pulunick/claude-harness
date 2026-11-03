@@ -2,7 +2,8 @@
 """PreToolUse(Bash) 훅 — 파괴적·규칙 위반 git 명령을 물리적으로 막는다. 문서에 "금지"라고 적는 것과 다르다.
 
 stdin 으로 훅 JSON({"tool_input":{"command": ...}})을 받는다. 막을 땐 exit 2 + stderr 사유(Claude 에게 전달됨).
-그 외·판단 불가는 exit 0(fail-open). 표준 라이브러리만.
+통과는 exit 0. 스크립트 자체 오류는 exit 1 → 훅 설정의 onFailure:"block" 이 그 git 명령을 막는다(고장 난 가드가 조용히 통과시키지 않게).
+명령이 비었으면 exit 0. 표준 라이브러리만.
 """
 import json
 import re
@@ -20,7 +21,7 @@ RULES = [
     (G + r"clean\s+-[a-zA-Z]*f", "clean -f 금지 — 추적 안 된 후보 이미지·설정이 지워진다"),
     (G + r"branch\s+-D\b", "branch -D 금지 — -d 로 (머지 안 된 브랜치면 사용자에게)"),
     (G + r"(?:commit|push)\b" + SEG + r"--no-verify", "--no-verify 금지 — 훅이 막는 데는 이유가 있다. 규칙 쪽을 고친다"),
-    (G + r"add\s+(?:-A|--all|\.|-u|:/)(?:\s|$)", "자동 스테이징 금지 — 파일을 명시 나열한다 (/wrap 4절)"),
+    (G + r"add\s+(?:-A|--all|\.|-u|:/)(?:\s|$)", "자동 스테이징 금지 — 파일을 명시 나열한다(다른 세션의 미커밋 파일이 섞인다)"),
     (G + r"commit\b" + SEG + r"\s(?:-[b-zA-Z]*a[a-zA-Z]*|--all)(?:\s|$)", "commit -a 금지 — 추적 파일 전부가 스테이징된다. git add <파일> 후 commit"),
     (G + r"rebase\s+-i\b", "대화형 rebase 는 이 환경에서 안 된다"),
     (G + r"(?:checkout\s+(?:--\s+)?\.|restore\s+\.)(?:\s|$)", "작업 트리 전체 되돌리기 금지 — 파일을 지정한다"),
@@ -36,10 +37,7 @@ def strip_text(cmd):
 
 
 def main():
-    try:
-        data = json.load(sys.stdin)
-    except Exception:
-        return 0
+    data = json.load(sys.stdin)  # 못 읽으면 아래 except → exit 1
     cmd = (data.get("tool_input") or {}).get("command") or ""
     if not cmd:
         return 0
@@ -54,5 +52,6 @@ def main():
 if __name__ == "__main__":
     try:
         sys.exit(main())
-    except Exception:
-        sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(f"[하네스 pre_gate] 가드 오류: {e}\n")
+        sys.exit(1)

@@ -52,7 +52,7 @@ python3 <하네스 홈>/setup/sync.py init <폴더> --profile solo --with craft[
 - **문서 하네스**: `.claude/BRAIN.md`(확정된 결정만) / `.claude/STATE.md`(진행 상태, 담당 표시) — 인수인계는 이 두 파일로
 - **누가 어디서 했는지**: 커밋마다 `Worked-by: 이름@기기` 트레일러 — git 훅이 자동으로 붙인다
 - **공유 메모리**: Claude 메모리 폴더를 저장소 `.claude/memory/`에 링크 → 한 사람의 Claude가 배운 것이 커밋으로 상대에게 간다
-- **규칙은 글보다 장치로**: 금지 파일·비밀값·개인 절대경로는 `pre-commit`이 막고, `git push --force`·`reset --hard`·`git add -A` 같은 명령은 Claude 훅(`pre_gate.py`)이 막는다. `doctor.py`가 설치·규약을 한 번에 점검
+- **규칙은 글보다 장치로**: 금지 파일·비밀값·개인 절대경로는 `pre-commit`이 막고, `git push --force`·`reset --hard`·`git add -A` 같은 명령은 Claude 훅(`pre_gate.py`, solo 포함 모든 프로필)이 막는다 — git 명령에만 돌고, 가드가 고장 나면 그 git 명령을 막는다(`if`·`onFailure`, Claude Code 2.1.295+). `doctor.py`가 설치·규약을 한 번에 점검
 - **서로 넘기기**: `/issue` — 막힌 것·결정·부탁을 GitHub 이슈로 상대 담당 지정. PR은 선택
 - 윈도우 상대방용 **부트스트랩 프롬프트**: Git·Claude Code만 사람이 깔고 나머지는 Claude가 셋업
 
