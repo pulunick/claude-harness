@@ -13,7 +13,7 @@ if [ -z "$WHO" ] || [ -z "$MACHINE" ]; then
 fi
 grep -q '^Worked-by:' "$MSG_FILE" && exit 0
 
-# 주석(#) 줄 앞, 본문 끝에 트레일러 블록으로 추가
-TMP="$MSG_FILE.tmp"
-awk 'BEGIN{done=0} /^#/ && !done { print ""; print "Worked-by: '"$WHO@$MACHINE"'"; done=1 } { print } END { if(!done){ print ""; print "Worked-by: '"$WHO@$MACHINE"'" } }' "$MSG_FILE" > "$TMP" && mv "$TMP" "$MSG_FILE"
+# 기존 트레일러 묶음(Co-Authored-By 등) 안에 넣는다 — 빈 줄로 새 문단을 만들면 앞 트레일러가 트레일러로 인식되지 않는다.
+# interpret-trailers 는 # 주석 줄 앞에 넣고, 트레일러가 없으면 빈 줄 하나 띄워 새로 만든다.
+git interpret-trailers --in-place --if-exists doNothing --trailer "Worked-by: $WHO@$MACHINE" "$MSG_FILE"
 exit 0
