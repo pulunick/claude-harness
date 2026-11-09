@@ -2,7 +2,7 @@
 """각자 기기에서 한 번 — (1) 커밋에 찍힐 신원(harness.who / harness.machine) 설정, (2) Claude 메모리 폴더를 저장소에 연결.
 
     python setup/common/link_memory.py --who 하늘 --machine mac
-    python setup/common/link_memory.py                      # 인자 없으면 물어본다
+    python setup/common/link_memory.py                      # 인자 없으면 기존 harness.who/machine, 그것도 없으면 물어본다
     python setup/common/link_memory.py --status             # 확인만
 
 왜: Claude Code는 ~/.claude/projects/<경로인코딩>/memory/ 를 세션마다 자동 로드하는데 이건 기기 로컬이다.
@@ -49,12 +49,29 @@ def status():
     print("  → " + ("저장소 .claude/memory 에 연결됨 ✅" if linked() else ("다른 곳을 가리킴/일반 폴더 ⚠" if LINK.exists() else "없음")))
 
 
+def ask(prompt, default=""):
+    """대화형일 때만 묻는다 — Claude가 대신 돌리는 비대화식 실행에선 input()이 EOFError로 죽는다."""
+    if not sys.stdin.isatty():
+        if default:
+            return default
+        sys.exit("신원이 없는데 물을 수 없음(비대화식 실행) → --who <이름> --machine <기기> 로 다시 실행")
+    try:
+        return input(prompt).strip() or default
+    except EOFError:
+        sys.exit("\n입력 없음 → --who <이름> --machine <기기> 로 다시 실행")
+
+
 def set_identity(who, machine):
+    # 이미 설정돼 있으면 그대로 쓴다(재설치·install-craft 재실행 때 다시 묻지 않게). 바꾸려면 인자로 준다
+    who = who or git("config", "harness.who")
+    machine = machine or git("config", "harness.machine")
     if not who:
-        who = input("커밋에 찍힐 이름 (예: 하늘): ").strip()
+        who = ask("커밋에 찍힐 이름 (예: 하늘): ")
+        if not who:
+            sys.exit("이름이 비어 있음 → 다시 실행")
     if not machine:
         default = "win" if IS_WIN else "mac"
-        machine = input(f"기기 이름 [{default}]: ").strip() or default
+        machine = ask(f"기기 이름 [{default}]: ", default)
     git("config", "harness.who", who)
     git("config", "harness.machine", machine)
     if not git("config", "user.name"):

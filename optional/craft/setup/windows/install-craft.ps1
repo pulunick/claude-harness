@@ -90,15 +90,29 @@ function Install-App([string]$app) {
   return $cli
 }
 
+# 0) 설치할 CLI가 실행 중이면(Claude Code가 MCP 서버로 띄워 둠) exe가 잠겨 덮어쓰기에서 전부 실패한다 → 미리 멈춘다
+if (-not $McpOnly) {
+  $busy = @($Only | Where-Object { $DisplayName.ContainsKey($_) -and ($Force -or -not (Find-Cli $_)) } |
+    Where-Object { Get-Process -Name "$_-cli" -ErrorAction SilentlyContinue })
+  if ($busy.Count -gt 0) {
+    Write-Host ""
+    Write-Host "실행 중인 크래프트 CLI: $($busy -join ', ') — 파일이 잠겨 있어 설치할 수 없음." -ForegroundColor Yellow
+    Write-Host "Claude Code(와 크래프트 앱)를 모두 끄고, 일반 PowerShell 창에서 다시 실행하세요. .mcp.json은 건드리지 않았습니다." -ForegroundColor Yellow
+    exit 1
+  }
+}
+
 # 1) 설치
 $clis = @{}
+$failed = @()
 foreach ($app in $Only) {
   if (-not $DisplayName.ContainsKey($app)) { Write-Warning "모르는 앱: $app"; continue }
   try {
     $clis[$app] = if ($McpOnly) { Find-Cli $app } else { Install-App $app }
-    if (-not $clis[$app]) { Write-Warning "[$app] CLI를 못 찾음 — -McpOnly 없이 다시 실행" }
+    if (-not $clis[$app]) { Write-Warning "[$app] CLI를 못 찾음 — -McpOnly 없이 다시 실행"; $failed += $app }
   } catch {
     Write-Warning "[$app] 실패: $($_.Exception.Message)"
+    $failed += $app
   }
 }
 
@@ -117,10 +131,15 @@ foreach ($app in $Only) {
 }
 $mcp = [ordered]@{ mcpServers = $servers }
 $mcpPath = Join-Path $RepoRoot ".mcp.json"
-# PS 5.1의 Set-Content -Encoding UTF8 은 BOM을 붙여 JSON 파서가 깨짐 → BOM 없이 쓴다
-[IO.File]::WriteAllText($mcpPath, ($mcp | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding $false))
 Write-Host ""
-Write-Host ".mcp.json 생성: $mcpPath ($($servers.Count)개 서버)" -ForegroundColor Green
+if ((Test-Path $mcpPath) -and ($failed.Count -gt 0 -or $servers.Count -eq 0)) {
+  # 일부라도 실패했는데 덮어쓰면 기존 MCP 연결이 사라진다 → 그대로 둔다
+  Write-Host ".mcp.json 유지: 실패한 앱이 있어 덮어쓰지 않음 ($($failed -join ', ')). 원인을 고친 뒤 다시 실행" -ForegroundColor Yellow
+} else {
+  # PS 5.1의 Set-Content -Encoding UTF8 은 BOM을 붙여 JSON 파서가 깨짐 → BOM 없이 쓴다
+  [IO.File]::WriteAllText($mcpPath, ($mcp | ConvertTo-Json -Depth 5), (New-Object Text.UTF8Encoding $false))
+  Write-Host ".mcp.json 생성: $mcpPath ($($servers.Count)개 서버)" -ForegroundColor Green
+}
 
 # 3) 크래프트 작업 폴더
 foreach ($d in @("vector", "photo", "effect", "design", "film", "sound", "out")) {

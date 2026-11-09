@@ -50,14 +50,16 @@ for a in json.load(sys.stdin)["assets"]:
   echo "  [$app] 설치 완료: $cli ($("$cli" --version 2>/dev/null | head -1))"
 }
 
+FAILED=""
 if [[ $MCP_ONLY -eq 0 ]]; then
-  for app in "${APPS[@]}"; do install_cli "$app" || true; done
+  for app in "${APPS[@]}"; do install_cli "$app" || FAILED="$FAILED $app"; done
 fi
 
-# .mcp.json 생성
-python3 - "$REPO_ROOT" "$BIN" "${APPS[@]}" <<'PY'
+# .mcp.json 생성 — 실패한 앱이 있는데 기존 파일이 있으면 덮어쓰지 않는다(기존 MCP 연결이 사라지지 않게)
+CRAFT_FAILED="$FAILED" python3 - "$REPO_ROOT" "$BIN" "${APPS[@]}" <<'PY'
 import json, os, sys
 root, bin_dir, *apps = sys.argv[1:]
+failed = os.environ.get("CRAFT_FAILED", "").split()
 servers = {}
 for app in apps:
     cli = os.path.join(bin_dir, f"{app}-cli")
@@ -68,6 +70,9 @@ for app in apps:
         args += ["--automation-read-root", root, "--automation-write-root", root]
     servers[app] = {"type": "stdio", "command": cli, "args": args, "env": {}}
 path = os.path.join(root, ".mcp.json")
+if os.path.exists(path) and (failed or not servers):
+    print(f"\n.mcp.json 유지: 실패한 앱이 있어 덮어쓰지 않음 ({', '.join(failed) or 'CLI 0개'}). 원인을 고친 뒤 다시 실행")
+    sys.exit(0)
 with open(path, "w", encoding="utf-8") as f:
     json.dump({"mcpServers": servers}, f, ensure_ascii=False, indent=2); f.write("\n")
 print(f"\n.mcp.json 생성: {path} ({len(servers)}개 서버)")

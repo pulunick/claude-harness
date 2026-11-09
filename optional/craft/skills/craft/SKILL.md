@@ -22,7 +22,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 
 그림 자체(일러스트·캐릭터·사진) 생성은 크래프트가 아니라 이미지 생성 도구 몫 — 전역 스킬 `codex-image`(Codex image_gen + 크로마키 후처리)가 있으면 그것. 크래프트는 벡터·편집·모션·레이아웃.
 
-확인한 버전(2026-11-02): Vector 0.20.0 · Photo 0.19.0 · Effect 0.20.0 · Design 0.16.0 · Film 0.16.0 · Sound 0.16.0 (GUI·CLI 동일).
+확인한 버전(2026-11-09): Vector 0.22.0 · Photo 0.21.0 · Effect 0.22.0 · Design 0.18.0 · Film 0.18.0 · Sound 0.18.0 (GUI·CLI 동일). 릴리스가 며칠 간격으로 나온다 — 앱을 업데이트하면 CLI도 `install-craft --force`로 맞춘다(런처는 GUI만 올림).
 
 ## 설치 위치 (OS별)
 
@@ -38,7 +38,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 
 ## 연결 방식
 
-- **headless** (기본 추천): `<cli> mcp --automation-read-root <폴더> --automation-write-root <폴더>` — 창 없이 엔진만, 파일 접근을 그 폴더로 제한. 루트는 여러 번 줄 수 있고, 빠진 쪽은 접근 0. **FilmCraft는 0.16에도 루트 옵션이 없다**(`filmcraft-cli mcp`만, 제한 없음)
+- **headless** (기본 추천): `<cli> mcp --automation-read-root <폴더> --automation-write-root <폴더>` — 창 없이 엔진만, 파일 접근을 그 폴더로 제한. 루트는 여러 번 줄 수 있고, 빠진 쪽은 접근 0. **FilmCraft는 0.18에도 루트 옵션이 없다**(`filmcraft-cli mcp`만, 제한 없음)
 - **bridge(앱 연결)**: 앱을 `--control <port>`로 띄우고(맥 `open -a <App> --args --control <port>`, 윈도우 `& "<app>.exe" --control <port>`) MCP를 그 포트에 붙임 → `ui_*`·스크린샷 도구 사용 가능, 사용자가 화면으로 같이 봄. **앱마다 플래그 이름이 다르다**(2026-11-02 `mcp --help` 기준):
 
   | 앱 | bridge 플래그 | 비고 |
@@ -65,7 +65,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 ## 공통 함정
 
 1. **export/save 대상 폴더를 자동 생성하지 않는다** → 새 하위 폴더는 먼저 만든다(맥 `mkdir -p`, 윈도우 `New-Item -ItemType Directory -Force`)
-2. **DesignCraft 기본 폰트(Source Serif 4)는 한글이 □**(0.16에서도 그대로, 2026-11-02 재확인) → **문서를 만들자마자 기본 문단 스타일을 바꾼다**: `execute style.paragraph.edit {name:"[Basic Paragraph]", chars:{fontFamily:"Apple SD Gothic Neo" | "Malgun Gothic", size:…}}` → 이후 만드는 텍스트 프레임이 전부 한글 정상. 스타일 이름은 대괄호 포함(`"Basic Paragraph"`는 "no style"). `font.replace {family:"Source Serif 4", toFamily:…}`는 **이미 있는 텍스트만** 바꾸고 뒤에 만든 프레임은 다시 □. `type.char {attrs:{…}}`는 선택된 텍스트에만 적용되고 크기도 `attrs` 안(`{size:24}`처럼 바깥에 두면 무시). EffectCraft 기본 폰트는 한글 정상. 같은 문서를 두 OS에서 열면 폰트가 서로 없을 수 있으니 PDF/PNG로 내보낸 결과를 공유
+2. **DesignCraft 기본 폰트(Source Serif 4)는 한글이 □**(0.18에서도 그대로, 2026-11-09 재확인 — 아래 우회도 0.18에서 동작) → **문서를 만들자마자 기본 문단 스타일을 바꾼다**: `execute style.paragraph.edit {name:"[Basic Paragraph]", chars:{fontFamily:"Apple SD Gothic Neo" | "Malgun Gothic", size:…}}` → 이후 만드는 텍스트 프레임이 전부 한글 정상. 스타일 이름은 대괄호 포함(`"Basic Paragraph"`는 "no style"). `font.replace {family:"Source Serif 4", toFamily:…}`는 **이미 있는 텍스트만** 바꾸고 뒤에 만든 프레임은 다시 □. `type.char {attrs:{…}}`는 선택된 텍스트에만 적용되고 크기도 `attrs` 안(`{size:24}`처럼 바깥에 두면 무시). EffectCraft 기본 폰트는 한글 정상. 같은 문서를 두 OS에서 열면 폰트가 서로 없을 수 있으니 PDF/PNG로 내보낸 결과를 공유
 3. 앱 본체에 `--help`를 주면 창이 뜬다(DesignCraft는 파일로 해석) → 도움말은 `*-cli`로(DesignCraft는 `designcraft-cli mcp --help`도 오류 → 오류 메시지의 usage를 본다). `--version` 형식이 앱마다 다르다(`photocraft-cli 0.19.0 (해시, 날짜)`, `soundcraft-cli 0.16.0 (macos aarch64)` — 0.13까진 `SoundCraft CLI x.y.z`) → 버전은 숫자 패턴으로 뽑는다
 4. 앱을 업데이트하면 CLI도 같은 버전으로(맥 `install-craft.sh --force`). CLI는 `~/.local/bin` 하나를 모든 프로젝트가 같이 쓰므로 한 번 교체하면 전부 적용되지만, **이미 열려 있는 세션의 MCP 프로세스는 옛 바이너리로 계속 돈다** → 그 세션에서 `/mcp`로 재연결하거나 새 세션. 릴리스 조회는 GitHub API라 **비인증 시간당 60회 한도에 걸리면 403** → 스크립트는 `gh api`(로그인 시)나 `GITHUB_TOKEN`을 쓴다
 5. 명령 id는 짐작하지 말고 목록 도구로 찾는다 — `command_list`(Vector·Photo·Film·Effect) / `list_commands`(Vector·Effect·Design·Sound, EffectCraft는 `compact:true`). CLI로는 `<cli> commands`(Film은 `commands <필터> --json`, `describe <id>`). 짐작이 틀렸던 예: 삭제는 `object.delete`가 아니라 VectorCraft `layer.delete {ids}` / EffectCraft `edit.clear {layers}`, 정렬은 `object.arrange.bringToFront` / EffectCraft `layer.arrange {layers,to|above}`. **단위도 params 설명에서 확인**(VectorCraft `object.scale`의 `sx`는 %)

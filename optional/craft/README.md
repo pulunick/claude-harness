@@ -13,8 +13,9 @@ python3 setup/init.py --with-craft      # 초기화 때. 이미 초기화한 저
 ## 각 기기에서
 
 - 맥: `bash setup/mac/install-craft.sh` (GUI 앱이 이미 있으면 `--mcp-only`). CLI를 최신으로 맞추려면 `--force`
-- 윈도우: `Set-ExecutionPolicy -Scope Process Bypass; .\setup\windows\install-craft.ps1` — 관리자 권한 없이 `%LOCALAPPDATA%\ArtCraft\`에 portable 설치, 약 800MB
-- 둘 다 끝에 `.mcp.json`을 **기기 절대경로**로 생성한다(커밋 제외). 파일 접근은 저장소 폴더로 제한
+- 윈도우: `Set-ExecutionPolicy -Scope Process Bypass; .\setup\windows\install-craft.ps1` — 관리자 권한 없이 `%LOCALAPPDATA%\ArtCraft\`에 portable 설치, 약 800MB. **업데이트(`-Force`)는 Claude Code를 끄고 일반 PowerShell에서** — 켜져 있으면 MCP로 떠 있는 `*-cli.exe`가 잠겨 있어 스크립트가 안내 후 멈춘다
+- 둘 다 끝에 `.mcp.json`을 **기기 절대경로**로 생성한다(커밋 제외). 파일 접근은 저장소 폴더로 제한. 설치에 실패한 앱이 있으면 기존 `.mcp.json`은 덮어쓰지 않는다
+- 크래프트 앱을 업데이트하면(런처는 GUI만 올림) CLI도 `--force`/`-Force`로 맞춘다. 신원(`harness.who`)이 이미 있으면 끝의 `link_memory.py`는 묻지 않는다
 - `claude` 실행 → MCP 승인 → `/mcp`에서 6종 connected 확인. `doctor.py`가 `.mcp.json`의 CLI 경로를 점검한다
 
 ## 사용법·함정
