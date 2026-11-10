@@ -7,6 +7,8 @@ description: 세션 마무리 — 체크포인트(BRAIN/STATE) → 공유 메모
 ## 1. 체크포인트
 `/checkpoint`의 절차대로 `.claude/BRAIN.md`(이번 세션에 **사용자가 확정한 것만**)와 `.claude/STATE.md`를 갱신한다. STATE "다음 작업" 맨 위는 **상대가 다음 세션에 바로 시작할 수 있게** 파일 경로까지 구체적으로. 완료 항목은 완료 로그로, 내가 잡았던 항목의 담당 표시를 정리한다. 두 파일의 "마지막 갱신" 날짜를 오늘로.
 
+**이 세션이 `/role coding`이면 이 단계를 건너뛴다** — 두 세션 체제에서 체크포인트는 검수 세션 전담이다(`role.md` 공통). 대신 미완 항목·실기기 상태·이어 할 점을 검수 세션에 SendMessage로 보내고 2단계부터 진행한다. 6번 보고의 BRAIN·STATE 줄에는 "검수 세션에 넘김"이라고 적는다. `ListAgents`에 검수 세션이 없으면(먼저 닫힘 등) 건너뛰지 않고 직접 체크포인트한다. `normal`·`review` 세션은 그대로 이 단계를 한다.
+
 ## 2. 공유 메모리
 이번 세션에서 **두 사람 모두의 Claude가 알아야 할 새 사실**(작업 규칙·선호·도구 함정·외부 링크)이 생겼으면 `.claude/memory/`에 적는다 — 규약은 `.claude/memory/README.md`.
 - 파일 하나에 사실 하나, 접두 `feedback_` / `project_` / `reference_`. 같은 주제가 이미 있으면 그 파일을 고친다(새로 만들지 않는다).
@@ -18,7 +20,7 @@ description: 세션 마무리 — 체크포인트(BRAIN/STATE) → 공유 메모
 
 ## 3. 커밋 전 점검
 ```bash
-git pull --rebase --autostash      # 충돌 시 멈추고 보고. 강제 금지
+git pull --rebase --autostash      # 충돌 시 멈추고 보고. 강제 금지. 아직 push 안 한 새 브랜치(upstream 없음)면 건너뛴다
 python tools/harness/pending.py    # 맥은 python3. [PENDING] 목록 확인
 python tools/harness/doctor.py     # 메모리 색인 1:1·STATE 담당 표기·날짜 등. FAIL 은 고치고 진행
 git status --porcelain
@@ -47,9 +49,9 @@ Worked-by: <who>@<machine>
 git commit -F - <<'MSG'
 ...
 MSG
-git push origin main
+git push origin HEAD        # 지금 있는 브랜치를 같은 이름으로 올린다 (새 브랜치면 -u 를 붙인다)
 ```
-푸시가 거부되면 `git pull --rebase` 후 다시 푸시. `--force` / `--no-verify` / `reset --hard` 금지. 그래도 안 되면 보고하고 멈춘다.
+푸시 대상은 `main` 고정이 아니라 **현재 브랜치**다 — PR용 `이름/슬러그` 브랜치에서 `git push origin main`을 하면 성공으로 끝나지만 방금 커밋은 올라가지 않는다. 푸시 뒤 `git status -sb`로 원격과 같아졌는지 보고, 확인된 것만 "푸시 ✅"로 보고한다. 푸시가 거부되면 `git pull --rebase` 후 다시 푸시. `--force` / `--no-verify` / `reset --hard` 금지. 그래도 안 되면 보고하고 멈춘다.
 
 ## 6. 보고
 ```
@@ -59,6 +61,6 @@ git push origin main
 - 메모리: <새 n건 / 갱신 n건 | 없음>
 - 템플릿 후보: <프로젝트 무관 교훈·훅 수정 n건: 한 줄씩 | 없음>
 - 커밋: <sha> <type>: <요약>  (파일 n개)
-- 푸시: origin/main ✅ | 실패 사유
+- 푸시: origin/<브랜치> ✅ | 실패 사유
 - 상대에게 한마디: <다음 사람이 알아야 할 것 한 줄>
 ```
