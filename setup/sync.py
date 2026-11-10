@@ -12,6 +12,7 @@
     python3 setup/sync.py --list                                 등록된 프로젝트와 상태
 
 규칙: 하네스에 커밋 안 된 변경이 있으면 sync 는 멈춘다(manifest 의 commit 이 실제 복사본과 어긋나지 않게).
+      manifest 의 commit 은 "그 프로젝트가 받는 경로가 마지막으로 바뀐 시점" 이다 — 하네스 HEAD 보다 뒤여도 받을 것이 없으면 정상.
 """
 import argparse
 import subprocess
@@ -97,7 +98,15 @@ def sync_project(root, dry=False, force=False, quiet=False):
             rc, out = git("diff", "--quiet", base_commit, cur, "--", sn)
             if rc == 1:
                 changed_snips.append(sn)
-    if not dry and not conflicts:
+    # manifest 의 commit 은 이 프로젝트가 받는 경로(공용 파일·조각)가 하네스에서 바뀌었을 때만 옮긴다.
+    # 무관한 하네스 커밋마다 옮기면 프로젝트마다 harness.json 한 줄짜리 커밋이 생긴다. 안 옮겨도 3-way 기준(base)의
+    # 내용은 같고, --check 는 이 경로를 건드린 커밋만 세므로 조용하다. 판정 불가(기준 커밋이 사라짐 등)면 옮긴다.
+    moved = True
+    if base_commit and not (added or updated):
+        paths = [src for src, _ in M.all_files(mods, profile)] + M.snippets_of(mods)
+        rc, _ = git("diff", "--quiet", base_commit, cur, "--", *paths)
+        moved = rc != 0
+    if not dry and not conflicts and moved:
         M.write_manifest(root, profile, mods, cur)
     if quiet and not (added or updated or conflicts or changed_snips or gate):
         return 0
