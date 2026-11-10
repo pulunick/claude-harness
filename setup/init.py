@@ -147,6 +147,23 @@ def parse_members(a):
     return out
 
 
+def is_template():
+    """이 저장소가 템플릿 자체인가 — 맞으면 이유(문자열), 아니면 ''. 템플릿에서 init 을 돌리면 시드가 망가진다."""
+    try:
+        home = (Path.home() / ".claude" / "harness-home").read_text(encoding="utf-8").strip()
+        if home and Path(home).resolve() == ROOT.resolve():
+            return "~/.claude/harness-home 이 이 폴더를 가리킴"
+    except OSError:
+        pass
+    try:
+        url = subprocess.run(["git", "-C", str(ROOT), "remote", "get-url", "origin"], capture_output=True, text=True, timeout=5).stdout.strip()
+    except Exception:
+        url = ""
+    if re.sub(r"\.git$", "", url).rstrip("/").endswith("/claude-harness"):
+        return "origin 이 claude-harness"
+    return ""
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--project", help="저장소 이름(슬러그)")
@@ -161,7 +178,13 @@ def main():
     ap.add_argument("--with", dest="with_mods", default="", help="optional 모듈 목록, 쉼표 구분: craft,film")
     ap.add_argument("--with-craft", action="store_true", help="(= --with craft)")
     ap.add_argument("--labels", action="store_true", help="gh 로 이슈 라벨 생성")
+    ap.add_argument("--template-ok", action="store_true", help="템플릿 저장소 자체에서도 실행 (보통 쓸 일 없음)")
     a = ap.parse_args()
+
+    why = is_template()
+    if why and not a.template_ok:
+        sys.exit(f"[init] 여기는 하네스 템플릿 저장소로 보인다({why}) — 실행하면 템플릿의 자리표시자가 치환되고 README 가 교체된다.\n"
+                 "       새 프로젝트는 `gh repo create --template` 로 만든 사본 안에서 실행한다. 그래도 하려면 --template-ok")
 
     left = remaining_placeholders()
     if left:

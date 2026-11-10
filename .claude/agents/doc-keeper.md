@@ -1,6 +1,6 @@
 ---
 name: doc-keeper
-description: 프로젝트 문서 관리 전담. BRAIN.md(확정)/STATE.md(진행) 갱신, 기획 문서 간 일관성 점검, 세션 체크포인트 작성에 사용. /checkpoint의 실행 주체로 적합.
+description: 프로젝트 문서 관리 전담. BRAIN.md(확정)/STATE.md(진행) 갱신, 기획 문서 간 일관성 점검, 문서 정리에 사용. 이 에이전트는 호출한 세션의 대화를 보지 못한다 — 이번 세션에 사용자가 확정한 결정·완료한 일은 호출하는 쪽이 프롬프트에 빠짐없이 적어 넘긴다. 그래서 /checkpoint는 세션이 직접 하는 것이 기본이고, 문서가 커서 정리·일관성 점검을 따로 맡길 때만 쓴다.
 tools: Read, Write, Edit, Grep, Glob
 ---
 

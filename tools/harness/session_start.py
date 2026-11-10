@@ -36,7 +36,9 @@ def main():
     branch = git("rev-parse", "--abbrev-ref", "HEAD") or "?"
     fetched = True
     try:
-        subprocess.run(["git", "-C", str(ROOT), "fetch", "-q", "--no-tags"], capture_output=True, timeout=8)
+        # 오프라인이면 git 이 예외 없이 바로 실패한다(반환 코드 ≠ 0) — 예외만 보면 낡은 정보로 "원격과 동일"이 찍힌다
+        fetched = subprocess.run(["git", "-C", str(ROOT), "fetch", "-q", "--no-tags"],
+                                 capture_output=True, timeout=8).returncode == 0
     except Exception:
         fetched = False
     counts = git("rev-list", "--left-right", "--count", f"HEAD...origin/{branch}")

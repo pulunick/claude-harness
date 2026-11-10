@@ -7,7 +7,7 @@
 ## ▶ 다음 작업 (여기서 시작)
 
 ### 0. 환경 준비
-- [ ] `[{{PERSON_A}}]` 나머지 멤버를 협업자로 초대(write) — `gh repo add-collaborator` 또는 웹. 수락하면 `/issue` assignee 자동 인식
+- [ ] `[{{PERSON_A}}]` 나머지 멤버를 협업자로 초대(write) — `gh api -X PUT repos/{{REPO}}/collaborators/<GitHub 로그인>` 또는 웹(Settings → Collaborators). 수락하면 `/issue` assignee 자동 인식
 - [ ] `[{{PERSON_A}}]` `/issue`용 라벨 6종 생성 — `python3 setup/init.py --labels` 또는 init 이 출력한 `gh label create` 명령
 - [ ] `[{{PERSON_B}}]` (멤버마다 한 줄씩) {{MACHINE_B}} 셋업 — `setup/README.md` 순서대로: Git·Claude Code 설치 → 클론 → `python setup/common/link_memory.py`(이름·기기 신원 + 메모리 링크 + git 훅) → `claude` → 시작 훅 `[하네스]` 블록에 "메모리: 연결됨" 확인 → `/start`. 막히는 부분은 여기 적어 두기
 - [ ] `[{{PERSON_B}}]` (멤버마다) 첫 `/wrap`으로 커밋 한 번 — `git log`에 `Worked-by: {{PERSON_B}}@{{MACHINE_B}}`가 찍히는지 확인

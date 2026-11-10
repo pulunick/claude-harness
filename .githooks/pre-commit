@@ -4,10 +4,11 @@
 STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
 [ -z "$STAGED" ] && exit 0
 
-BAD=$(printf '%s\n' "$STAGED" | grep -E '^(\.mcp\.json|\.claude/settings\.local\.json|local\.properties|\.env(\..*)?|.*\.(keystore|jks|pem|p12))$|^\.claude/memory/local_|^img/candidates/')
+# 파일 이름으로 막는 것은 하위 폴더에서도 막는다(backend/.env, android/local.properties) — .gitignore 는 git add -f 로 뚫린다
+BAD=$(printf '%s\n' "$STAGED" | grep -E '(^|/)(\.mcp\.json|local\.properties|\.env(\..*)?)$|^\.claude/settings\.local\.json$|\.(keystore|jks|pem|p12)$|^\.claude/memory/local_|^img/candidates/')
 if [ -n "$BAD" ]; then
   echo "[hook] 커밋 금지 대상이 스테이징됨:" >&2
-  printf '  %s\n' $BAD >&2
+  printf '%s\n' "$BAD" | sed 's/^/  /' >&2
   echo "  git restore --staged <파일> 로 빼고 다시. 정말 필요하면 git commit --no-verify 가 아니라 .gitignore/규칙을 고친다" >&2
   exit 1
 fi
@@ -20,8 +21,8 @@ if [ -n "$LEAK" ]; then
   exit 1
 fi
 
-# 개인 절대경로 (문서·설정·메모리에 한함)
-PATHS=$(git diff --cached -U0 -- '*.md' '*.json' '*.py' '*.sh' '*.ps1' | grep -E '^\+' | grep -E '(/Users/[A-Za-z0-9_.-]+/|[A-Za-z]:\\Users\\[A-Za-z0-9_.-]+\\)' | grep -v -E '^\+\+\+|<이름>|<name>|예:|예\)' | head -5)
+# 개인 절대경로 (문서·설정·메모리에 한함). 윈도우 경로는 JSON 안의 이스케이프 꼴(C:\\Users\\이름\\)도 잡는다
+PATHS=$(git diff --cached -U0 -- '*.md' '*.json' '*.py' '*.sh' '*.ps1' | grep -E '^\+' | grep -E '(/Users/[A-Za-z0-9_.-]+/|[A-Za-z]:\\\\?Users\\\\?[A-Za-z0-9_.-]+\\)' | grep -v -E '^\+\+\+|<이름>|<name>|예:|예\)' | head -5)
 if [ -n "$PATHS" ]; then
   echo "[hook] 개인 절대경로가 들어감 (상대 기기엔 없는 경로) — <repo>/… 나 ~/ 로 바꿀 것:" >&2
   printf '  %s\n' "$PATHS" | cut -c1-120 >&2
