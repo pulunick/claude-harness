@@ -6,3 +6,4 @@
 - [미리보기는 사용자 화면에 띄우기](feedback_show_previews_to_user.md) — 사용자는 Claude가 Read로 본 이미지를 못 본다, 여러 안은 비교 시트
 - [가장 최근 메시지를 따른다](feedback_latest_message_wins.md) — 디자인 판정은 보면서 빠르게 바뀜, 교체분은 candidates에 보관
 - [zsh는 변수 옵션을 쪼개지 않음](feedback_zsh_no_word_splitting.md) — `$OPTS` 로 넘긴 ffmpeg 옵션이 한 인자가 되어 조용히 실패, 함수·배열 사용 + 결과 파일 확인
+- [브라우저·파일 함정](reference_browser_file_pitfalls.md) — Chrome: `--chrome`으로 연결, 웹 VS Code에선 key 금지, 한글 파일명 업로드 거부 → 영문 사본 · 윈도우 한글 zip은 `metadata_encoding="cp949"`
