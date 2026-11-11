@@ -189,7 +189,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("target", nargs="*")
     ap.add_argument("--profile", choices=["solo", "team"], default="solo")
-    ap.add_argument("--with", dest="with_mods", default="", help="모듈 목록 쉼표 구분: craft,film,post,mockup (film·post 는 택1)")
+    ap.add_argument("--with", dest="with_mods", default="", help="모듈 목록 쉼표 구분: craft,film,post,mockup,phone (film·post 는 택1)")
     ap.add_argument("--title"); ap.add_argument("--desc")
     ap.add_argument("--bare", action="store_true", help="init: 기존 프로젝트에 manifest·점검 훅·공용 파일만 (CLAUDE.md 절·폴더 등 enable 생략)")
     ap.add_argument("--all", action="store_true"); ap.add_argument("--list", action="store_true")

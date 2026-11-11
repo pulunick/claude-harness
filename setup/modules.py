@@ -122,6 +122,16 @@ MODULES = {
         "files": [("optional/film/tools/craft.sh", "tools/craft.sh")],
         "snippets": ["optional/post/CLAUDE.snippet.md", "optional/post/skeleton"],
     },
+    # 실기기 QA(Android, phone-harness) — usroom 에서 옮김(2026-11-11). 기기·앱·누르지 않는 문구·앱 고유 명령은 프로젝트 소유
+    "phone": {
+        "files": [
+            *[(f"optional/phone/tools/{f}", f"tools/phone/{f}")
+              for f in ("phonelib.py", "preflight", "see", "tap", "shot", "type_ko", "test_phone.py")],
+            ("optional/phone/README.md", "docs/phone-qa.md"),
+        ],
+        "snippets": ["optional/phone/CLAUDE.snippet.md", "optional/phone/phone.json.example",
+                     "optional/phone/deny.txt.example", "optional/phone/app.py.example"],
+    },
 }
 
 PROFILE_DEFAULTS = {"solo": ["core"], "team": ["core", "team", "mockup"]}
@@ -279,6 +289,17 @@ def enable(module, root, profile, modules=()):
                   "media/내보내기/썸네일", "media/내보내기/이미지", "edit/film", "edit/effect", "edit/motion", "tools"):
             (root / d).mkdir(parents=True, exist_ok=True)
         # 게시물용 STATE·게시물 틀은 optional/post/skeleton/. .mcp.json 은 craft 모듈이 만든다(headless)
+    elif module == "phone":
+        if _append_snippet(root / "CLAUDE.md", "optional/phone/CLAUDE.snippet.md", "## 실기기 QA"):
+            notes.append("CLAUDE.md 에 '실기기 QA' 절 — 7번의 테스트 폰을 채울 것")
+        ph = root / "tools" / "phone"
+        ph.mkdir(parents=True, exist_ok=True)
+        for name in ("phone.json", "deny.txt"):
+            if not (ph / name).exists():
+                shutil.copyfile(HARNESS / "optional" / "phone" / f"{name}.example", ph / name)
+                notes.append(f"tools/phone/{name} — 프로젝트 값으로 채울 것")
+        _gitignore_add(root, "__pycache__/\n", "__pycache__")
+        notes.append("설치는 docs/phone-qa.md 1절(👤 사용자가 ! 로 실행). 앱 고유 명령은 optional/phone/app.py.example → tools/phone/app.py")
     elif module == "mockup":
         (root / "docs" / "design").mkdir(parents=True, exist_ok=True)
     return notes

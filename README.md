@@ -22,7 +22,7 @@ cd ~/work/my-app && claude        # 세션에서 BRAIN/STATE 를 채워 가며 �
 
 - 하네스를 고쳐 쓰고 싶으면 **포크**해서 받는다. 프로젝트의 `.claude/harness.json`에 내 클론의 origin이 적히고, 내 포크에서 고친 것만 `sync.py --all`로 내 프로젝트들에 퍼진다.
 - 원본을 따라가려면 하네스 홈에서 `git pull` → `python3 setup/sync.py --all`. 프로젝트에서 직접 고친 공용 파일은 덮어쓰지 않고 충돌로 알려 준다.
-- `--with craft|film|post`는 **작성자 환경용 선택 모듈**이다(ArtCraft 앱 6종, `film/` 상위 폴더 관례). 해당 도구가 없으면 켜지 않는다 — 기본 `solo`·`team`만으로 완결된다.
+- `--with craft|film|post`는 **작성자 환경용 선택 모듈**이다(ArtCraft 앱 6종, `film/` 상위 폴더 관례). 해당 도구가 없으면 켜지 않는다 — 기본 `solo`·`team`만으로 완결된다. `--with phone`은 Android 실기기 QA(phone-harness + adb) 헬퍼·규칙이다.
 - CLAUDE.md에 나오는 전역 스킬(`craft`·`codex-image`·`video-edit`)은 작성자 기기의 `~/.claude/skills/`에 있는 것이라 이 저장소에 없다. 없으면 그 줄은 무시하거나 지운다.
 
 ## 두 층 — 공용 파일과 프로젝트 소유 파일
@@ -92,6 +92,7 @@ claude      # → /start
 | `optional/craft/` | **선택 모듈(작성자 환경)** — ArtCraft 디자인 앱 6종 MCP. team은 설치 스크립트 + 프로젝트 스킬 사본(윈도우 상대용, 전역 스킬 `craft`와 같은 내용의 사본 — 한쪽을 고치면 그대로 복사해 맞춘다, 2026-11-02 합침), solo는 `.mcp.json`·CLAUDE 절만(전역 스킬 사용) |
 | `optional/film/` | **선택 모듈(작성자 환경)** — 영상 프로젝트 뼈대(`film/` 아래): `/update`·`tools/craft.sh`·폴더·영상용 BRAIN/STATE·`.mcp.json` 본. 옛 `film/_template` 흡수 |
 | `optional/post/` | **선택 모듈(작성자 환경)** — SNS 게시물 채널 뼈대(글 + 15~30초 세로 영상, 어디에 두든 혼자 섬): `docs/01_게시물/<날짜_슬러그>/post.md` 틀·세로·자막 기본·`tools/craft.sh`. film과 택1 |
+| `optional/phone/` | **선택 모듈** — Android 실기기 QA(phone-harness 0.3.3 + adb): `tools/phone/` 헬퍼(preflight·see·tap·shot·type_ko, 누르지 않는 목록 거부)·`docs/phone-qa.md`·CLAUDE '실기기 QA' 절. 기기·앱은 `phone.json`, 앱 고유 명령은 `app.py`(프로젝트 소유). usroom에서 옮김(2026-11-11) |
 
 ## 전제
 

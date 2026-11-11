@@ -1,0 +1,58 @@
+"""앱에 묶인 실기기 명령 — 프로젝트 소유(tools/phone/app.py). 하네스 공용 phonelib.py 가 이 파일의 사전을 명령에 더한다.
+래퍼도 직접 만든다: tools/phone/turn →  exec python3 "$(dirname "$0")/phonelib.py" turn "$@"
+테스트는 tools/phone/test_app.py 에 따로(공용 test_phone.py 는 sync가 덮어쓴다).
+
+아래는 '대화 한 턴' 예시 — 앱을 열고, 대화 화면에 들어가, 한글로 보내고, 응답이 멈출 때까지 기다린다.
+"""
+import time
+
+import phonelib as pl
+
+PLACEHOLDER = "메시지를 입력하세요"     # 입력란 안내 문구(늘어난 텍스트에서 뺀다)
+FAIL_TEXT = "응답을 받지 못했어요"      # 앱이 실패 때 보이는 문구
+SEND = "보내기"
+TIMEOUT = 60.0
+
+
+def cmd_turn(h, args, clock=time.monotonic, sleep=time.sleep):
+    if len(args) != 1:
+        print("사용: turn \"문장\"")
+        return 2
+    sentence = args[0]
+    rc = pl.cmd_preflight([])
+    if rc != 0:
+        return rc
+    h["open_app"](pl.app())
+    h["wait_stable"](timeout=15)       # 고정 대기보다 화면이 멈추는 걸 기다리는 쪽이 빠르다
+    if pl.edit_text(h) is None:
+        print("실패: 대화 입력란이 없음")
+        return 1
+    try:
+        pl.type_ko(h, sentence)
+    except Exception as e:
+        print(f"실패: 한글 입력 — {e}")
+        return 1
+    before = pl.texts(h)
+    try:
+        pl.safe_tap(h, SEND)
+    except (LookupError, pl.Denied) as e:
+        print(f"실패: {e}")
+        return 1
+    judge, t0, cur = pl.TurnJudge(before, sentence, ignore=[PLACEHOLDER], fail_text=FAIL_TEXT), clock(), []
+    while clock() - t0 < TIMEOUT:
+        sleep(pl.POLL)
+        state, cur = judge.feed(pl.texts(h))
+        if state == "failed":
+            print(f"응답 실패({clock() - t0:.1f}초): {cur}")
+            return 1
+        if state == "done":
+            print(f"응답 완료({clock() - t0:.1f}초):")
+            for t in cur:
+                print(f"  {t}")
+            return 0
+    print(f"시간 초과({TIMEOUT:.0f}초) — 그때까지: {cur}")
+    return 1
+
+
+HARNESS_CMDS = {"turn": cmd_turn}
+ADB_CMDS = {}

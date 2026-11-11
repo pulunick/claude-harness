@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# 실기기 QA 헬퍼 — docs/phone-qa.md (하네스 optional/phone 공용 파일)
+exec python3 "$(dirname "$0")/phonelib.py" preflight "$@"
