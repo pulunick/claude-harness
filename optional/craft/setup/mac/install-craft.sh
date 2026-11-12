@@ -4,6 +4,11 @@
 #   bash setup/mac/install-craft.sh              # 없는 CLI만 설치 + .mcp.json
 #   bash setup/mac/install-craft.sh --force      # 전부 최신으로 다시 받기
 #   bash setup/mac/install-craft.sh --mcp-only   # 설치 건너뛰고 .mcp.json만
+#   bash setup/mac/install-craft.sh --with=figcraft,pdfcraft   # 선택 앱 CLI도 설치
+#
+# 선택 앱: figcraft(화면 시안·코드 내보내기) 는 .mcp.json 에도 등록, pdfcraft(PDF 주석·정리) 는 CLI만 설치한다
+# (pdfcraft 는 MCP 도구가 많아 필요할 때 셸에서 pdfcraft-cli 로 쓴다). 한 번 넣은 figcraft 항목은 다음 실행에도 유지되고,
+# --force 는 이미 깔려 있는 선택 앱 CLI도 같이 최신으로 올린다.
 #
 # GUI 앱(/Applications/<App>.app)은 https://getartcraft.com/download 런처로 설치하면 된다.
 # CLI는 GitHub 릴리스(storytold/<app>)의 <app>-cli-<ver>-macos-universal.zip. 서명·공증되어 있음.
@@ -12,8 +17,16 @@ set -euo pipefail
 APPS=(vectorcraft photocraft effectcraft designcraft filmcraft soundcraft)
 BIN="$HOME/.local/bin"
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-FORCE=0; MCP_ONLY=0; LINK_ARGS=()
-for a in "$@"; do case "$a" in --force) FORCE=1;; --mcp-only) MCP_ONLY=1;; --who=*|--machine=*) LINK_ARGS+=("${a%%=*}" "${a#*=}");; esac; done
+OPTIONAL_APPS=(figcraft pdfcraft)   # 선택 앱: --with= 로 고른 것만 설치
+FORCE=0; MCP_ONLY=0; LINK_ARGS=(); WITH=""
+for a in "$@"; do case "$a" in --force) FORCE=1;; --mcp-only) MCP_ONLY=1;; --with=*) WITH="${a#*=}";; --who=*|--machine=*) LINK_ARGS+=("${a%%=*}" "${a#*=}");; esac; done
+EXTRAS=()
+for app in "${OPTIONAL_APPS[@]}"; do
+  if [[ ",$WITH," == *",$app,"* ]] || [[ $FORCE -eq 1 && -x "$BIN/$app-cli" ]]; then EXTRAS+=("$app"); fi
+done
+for w in ${WITH//,/ }; do
+  [[ " ${OPTIONAL_APPS[*]} " == *" $w "* ]] || echo "  모르는 선택 앱: $w (가능: ${OPTIONAL_APPS[*]})" >&2
+done
 # 예: bash setup/mac/install-craft.sh --mcp-only --who=<이름> --machine=mac  (안 주면 물어봄)
 
 echo "저장소: $REPO_ROOT"
@@ -52,14 +65,23 @@ for a in json.load(sys.stdin)["assets"]:
 
 FAILED=""
 if [[ $MCP_ONLY -eq 0 ]]; then
-  for app in "${APPS[@]}"; do install_cli "$app" || FAILED="$FAILED $app"; done
+  for app in "${APPS[@]}" ${EXTRAS[@]+"${EXTRAS[@]}"}; do install_cli "$app" || FAILED="$FAILED $app"; done
 fi
 
 # .mcp.json 생성 — 실패한 앱이 있는데 기존 파일이 있으면 덮어쓰지 않는다(기존 MCP 연결이 사라지지 않게)
-CRAFT_FAILED="$FAILED" python3 - "$REPO_ROOT" "$BIN" "${APPS[@]}" <<'PY'
+CRAFT_FAILED="$FAILED" CRAFT_WITH="$WITH" python3 - "$REPO_ROOT" "$BIN" "${APPS[@]}" <<'PY'
 import json, os, sys
 root, bin_dir, *apps = sys.argv[1:]
 failed = os.environ.get("CRAFT_FAILED", "").split()
+path = os.path.join(root, ".mcp.json")
+# 선택 앱 figcraft: --with 로 골랐거나 기존 .mcp.json 에 이미 있으면 등록한다(pdfcraft 는 CLI만 쓰므로 등록하지 않는다)
+try:
+    with open(path, encoding="utf-8") as f:
+        had = set(json.load(f).get("mcpServers", {}))
+except (OSError, ValueError):
+    had = set()
+if "figcraft" in os.environ.get("CRAFT_WITH", "").split(",") or "figcraft" in had:
+    apps.append("figcraft")
 servers = {}
 for app in apps:
     cli = os.path.join(bin_dir, f"{app}-cli")
@@ -69,7 +91,6 @@ for app in apps:
     if app != "filmcraft":  # filmcraft-cli에는 root 옵션이 없다
         args += ["--automation-read-root", root, "--automation-write-root", root]
     servers[app] = {"type": "stdio", "command": cli, "args": args, "env": {}}
-path = os.path.join(root, ".mcp.json")
 if os.path.exists(path) and (failed or not servers):
     print(f"\n.mcp.json 유지: 실패한 앱이 있어 덮어쓰지 않음 ({', '.join(failed) or 'CLI 0개'}). 원인을 고친 뒤 다시 실행")
     sys.exit(0)

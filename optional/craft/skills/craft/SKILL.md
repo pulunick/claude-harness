@@ -1,6 +1,6 @@
 ---
 name: craft
-description: ArtCraft 크래프트 앱(VectorCraft·PhotoCraft·EffectCraft·DesignCraft·FilmCraft·SoundCraft) MCP 공통 사용법·함정·작업 흐름(맥·윈도우). 로고·아이콘·벡터 그래픽, 이미지 편집·합성, 모션·타이틀 렌더, 레이아웃·PDF, 영상 편집, 오디오 믹스를 크래프트 MCP 도구(mcp__vectorcraft__* 등)로 할 때, 또는 새 프로젝트에 크래프트 MCP를 붙이거나 연결이 안 될 때 먼저 읽는다. 프로젝트별 연결·폴더·용도는 각 프로젝트 CLAUDE.md "크래프트" 절이 우선.
+description: ArtCraft 크래프트 앱(VectorCraft·PhotoCraft·EffectCraft·DesignCraft·FilmCraft·SoundCraft) MCP 공통 사용법·함정·작업 흐름(맥·윈도우). 로고·아이콘·벡터 그래픽, 이미지 편집·합성, 모션·타이틀 렌더, 레이아웃·PDF, 영상 편집, 오디오 믹스를 크래프트 MCP 도구(mcp__vectorcraft__* 등)로 할 때, 선택 앱 FigCraft(화면 시안 파일·Compose/SwiftUI/React 코드 내보내기)·PdfCraft(PDF 문구 하이라이트·주석·페이지 정리) CLI를 쓸 때, 또는 새 프로젝트에 크래프트 MCP를 붙이거나 연결이 안 될 때 먼저 읽는다. 프로젝트별 연결·폴더·용도는 각 프로젝트 CLAUDE.md "크래프트" 절이 우선.
 ---
 
 # 크래프트 앱 공통 가이드 (맥 · 윈도우)
@@ -22,7 +22,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 
 그림 자체(일러스트·캐릭터·사진) 생성은 크래프트가 아니라 이미지 생성 도구 몫 — 전역 스킬 `codex-image`(Codex image_gen + 크로마키 후처리)가 있으면 그것. 크래프트는 벡터·편집·모션·레이아웃.
 
-확인한 버전(2026-11-09): Vector 0.22.0 · Photo 0.21.0 · Effect 0.22.0 · Design 0.18.0 · Film 0.18.0 · Sound 0.18.0 (GUI·CLI 동일). 릴리스가 며칠 간격으로 나온다 — 앱을 업데이트하면 CLI도 `install-craft --force`로 맞춘다(런처는 GUI만 올림).
+확인한 버전(2026-11-12): Vector 0.24.0 · Photo 0.23.0 · Effect 0.24.1 · Design 0.20.1 · Film 0.20.1 · Sound 0.20.0 (GUI·CLI 동일). 같은 제작사의 FigCraft 0.18.0 · PdfCraft 0.21.0도 CLI·MCP가 있다(아래 "추가 앱" 절, 설치는 `--with=`로 선택). 릴리스가 며칠 간격으로 나온다 — 앱을 업데이트하면 CLI도 `install-craft --force`로 맞춘다(런처는 GUI만 올림).
 
 ## 설치 위치 (OS별)
 
@@ -38,7 +38,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 
 ## 연결 방식
 
-- **headless** (기본 추천): `<cli> mcp --automation-read-root <폴더> --automation-write-root <폴더>` — 창 없이 엔진만, 파일 접근을 그 폴더로 제한. 루트는 여러 번 줄 수 있고, 빠진 쪽은 접근 0. **FilmCraft는 0.18에도 루트 옵션이 없다**(`filmcraft-cli mcp`만, 제한 없음)
+- **headless** (기본 추천): `<cli> mcp --automation-read-root <폴더> --automation-write-root <폴더>` — 창 없이 엔진만, 파일 접근을 그 폴더로 제한. 루트는 여러 번 줄 수 있고, 빠진 쪽은 접근 0. **FilmCraft는 0.20.1에도 루트 옵션이 없다**(`filmcraft-cli mcp [--project <p.fcproj>]`, 제한 없음. 같은 프로젝트를 앱과 동시에 열면 나중에 저장한 쪽이 덮어쓴다)
 - **bridge(앱 연결)**: 앱을 `--control <port>`로 띄우고(맥 `open -a <App> --args --control <port>`, 윈도우 `& "<app>.exe" --control <port>`) MCP를 그 포트에 붙임 → `ui_*`·스크린샷 도구 사용 가능, 사용자가 화면으로 같이 봄. **앱마다 플래그 이름이 다르다**(2026-11-02 `mcp --help` 기준):
 
   | 앱 | bridge 플래그 | 비고 |
@@ -65,10 +65,10 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 ## 공통 함정
 
 1. **export/save 대상 폴더를 자동 생성하지 않는다** → 새 하위 폴더는 먼저 만든다(맥 `mkdir -p`, 윈도우 `New-Item -ItemType Directory -Force`)
-2. **DesignCraft 기본 폰트(Source Serif 4)는 한글이 □**(0.18에서도 그대로, 2026-11-09 재확인 — 아래 우회도 0.18에서 동작) → **문서를 만들자마자 기본 문단 스타일을 바꾼다**: `execute style.paragraph.edit {name:"[Basic Paragraph]", chars:{fontFamily:"Apple SD Gothic Neo" | "Malgun Gothic", size:…}}` → 이후 만드는 텍스트 프레임이 전부 한글 정상. 스타일 이름은 대괄호 포함(`"Basic Paragraph"`는 "no style"). `font.replace {family:"Source Serif 4", toFamily:…}`는 **이미 있는 텍스트만** 바꾸고 뒤에 만든 프레임은 다시 □. `type.char {attrs:{…}}`는 선택된 텍스트에만 적용되고 크기도 `attrs` 안(`{size:24}`처럼 바깥에 두면 무시). EffectCraft 기본 폰트는 한글 정상. 같은 문서를 두 OS에서 열면 폰트가 서로 없을 수 있으니 PDF/PNG로 내보낸 결과를 공유
+2. **DesignCraft 기본 폰트(Source Serif 4)는 한글이 □**(0.20.1에서도 그대로, 2026-11-12 재확인 — 아래 우회도 0.20.1에서 동작) → **문서를 만들자마자 기본 문단 스타일을 바꾼다**: `execute style.paragraph.edit {name:"[Basic Paragraph]", chars:{fontFamily:"Apple SD Gothic Neo" | "Malgun Gothic", size:…}}` → 이후 만드는 텍스트 프레임이 전부 한글 정상. 스타일 이름은 대괄호 포함(`"Basic Paragraph"`는 "no style"). `font.replace {family:"Source Serif 4", toFamily:…}`는 **이미 있는 텍스트만** 바꾸고 뒤에 만든 프레임은 다시 □. `type.char {attrs:{…}}`는 선택된 텍스트에만 적용되고 크기도 `attrs` 안(`{size:24}`처럼 바깥에 두면 무시). EffectCraft 기본 폰트는 한글 정상. 같은 문서를 두 OS에서 열면 폰트가 서로 없을 수 있으니 PDF/PNG로 내보낸 결과를 공유
 3. 앱 본체에 `--help`를 주면 창이 뜬다(DesignCraft는 파일로 해석) → 도움말은 `*-cli`로(DesignCraft는 `designcraft-cli mcp --help`도 오류 → 오류 메시지의 usage를 본다). `--version` 형식이 앱마다 다르다(`photocraft-cli 0.19.0 (해시, 날짜)`, `soundcraft-cli 0.16.0 (macos aarch64)` — 0.13까진 `SoundCraft CLI x.y.z`) → 버전은 숫자 패턴으로 뽑는다
 4. 앱을 업데이트하면 CLI도 같은 버전으로(맥 `install-craft.sh --force`). CLI는 `~/.local/bin` 하나를 모든 프로젝트가 같이 쓰므로 한 번 교체하면 전부 적용되지만, **이미 열려 있는 세션의 MCP 프로세스는 옛 바이너리로 계속 돈다** → 그 세션에서 `/mcp`로 재연결하거나 새 세션. 릴리스 조회는 GitHub API라 **비인증 시간당 60회 한도에 걸리면 403** → 스크립트는 `gh api`(로그인 시)나 `GITHUB_TOKEN`을 쓴다
-5. 명령 id는 짐작하지 말고 목록 도구로 찾는다 — `command_list`(Vector·Photo·Film·Effect) / `list_commands`(Vector·Effect·Design·Sound, EffectCraft는 `compact:true`). CLI로는 `<cli> commands`(Film은 `commands <필터> --json`, `describe <id>`). 짐작이 틀렸던 예: 삭제는 `object.delete`가 아니라 VectorCraft `layer.delete {ids}` / EffectCraft `edit.clear {layers}`, 정렬은 `object.arrange.bringToFront` / EffectCraft `layer.arrange {layers,to|above}`. **단위도 params 설명에서 확인**(VectorCraft `object.scale`의 `sx`는 %)
+5. 명령 id는 짐작하지 말고 목록 도구로 찾는다 — `command_list`(Vector·Photo·Film·Effect) / `list_commands`(Vector·Effect·Design·Sound, EffectCraft는 `compact:true`). CLI로는 `<cli> commands`(Film은 `commands <필터> --json`, `describe <id>`). 짐작이 틀렸던 예: 삭제는 `object.delete`가 아니라 VectorCraft `layer.delete {ids}` / EffectCraft `edit.clear {layers}`, 정렬은 `object.arrange.bringToFront` / EffectCraft `layer.arrange {layers,to|above}`. **단위도 params 설명에서 확인**(VectorCraft `object.scale`의 `sx`는 %). **VectorCraft 0.23+는 명령이 모르는 키·틀린 타입·id가 아닌 `ids` 항목을 조용히 무시하지 않고 거부한다**(`unknown parameter …`, 2026-11-12 실측) → 예전 스크립트가 오류를 내면 키 이름부터 본다. 0.24+는 `engine.apiReference`가 명령 API 문서를 마크다운으로 돌려준다
 6. 윈도우 명령줄 길이 한도 32,767자 — 큰 파라미터(긴 path `d`, 배치 JSON)는 도구 호출에 싣지 말고 파일로 두고 `run --commands <파일.jsonl>`(Vector·Effect) / `run <파일.jsonl>`(Film)
 7. **경로 제한(루트) 아래에선 더 막힌다** — EffectCraft 0.19+: `run_script`/`script.run` 거부, 렌더 출력이 쓰기 루트 밖이면 거부, `output` 없는 `renderQueue.add`는 저장된 프로젝트 필요, 루트 밖 푸티지는 안 보임. PhotoCraft는 쓰기 루트의 이미지가 아닌 파일을 덮어쓰지 않는다. 출력 경로는 루트 안 상대·절대경로로
 
@@ -83,7 +83,7 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
   - `export {artboard}`의 artboard 인덱스는 **0-based**. 아트보드별 SVG는 좌표가 그 아트보드 원점 기준으로 재배치돼 나온다 → 라이트/다크 아트보드의 SVG 경로가 같아 색만 치환하면 된다
 - 여러 문서: `document.activate {index}`. 상태 확인 `doc_inspect`/`document.inspect`(오브젝트 bounds·id)
 - 확인 `render_preview {artboard}` → 내보내기 `export {path, artboard|range, scale}`. `range`로 여러 아트보드면 파일명이 `<이름>-Artboard-N.<ext>`로 나뉜다(래스터는 `options:{useArtboards:true}`)
-- **픽셀 크기로 내보내기**(0.19+, 2026-11-02 headless 검증): `document.export {path, artboard, width:512}` → 512×512 (스키마 설명엔 없지만 동작)
+- **픽셀 크기로 내보내기**(0.19+, 2026-11-02 headless 검증): `document.export {path, artboard, width:512}` → 512×512 (스키마 설명엔 없지만 동작, 모르는 키를 거부하는 0.24.0에서도 통과 — 2026-11-12 재확인)
 - **크기별 일괄 내보내기 `document.exportForScreens`**(검증):
   - Android 런처 아이콘(108dp = 432px 아트보드): `{folder, artboards:[0], folders:"rows", name:"ic_launcher_foreground", formats:[{format:"png", width:108, folder:"mipmap-mdpi", suffix:""}, …162 hdpi, 216 xhdpi, 324 xxhdpi, 432 xxxhdpi]}` → `mipmap-*/ic_launcher_foreground.png`
   - **`preset:"density"`는 아트보드 크기를 mdpi(1x)로 본다** → 432px 아트보드면 xxxhdpi가 1728px로 4배 크게 나온다. 런처 아이콘은 위처럼 width를 직접 주거나 아트보드를 dp 크기(108px)로
@@ -110,7 +110,8 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 - 스케일로 늘리면 위 레이어(작은 부품)도 같이 찌그러진다 → 움직이는 부품은 별도 레이어로
 
 ### DesignCraft
-- `new_document` → 기본 문단 스타일에 한글 폰트(함정 2) → `execute frame.create {rect,content:"text",text}` → `render_page`로 확인 → PDF/PNG export. 좌표는 포인트(Letter 612×792, y 아래로)
+- `new_document` → 기본 문단 스타일에 한글 폰트(함정 2) → `execute frame.create {rect,content:"text",text}` → `render_page`로 확인 → PDF/PNG export. 좌표는 포인트(Letter 612×792, y 아래로), **`rect`는 `[x0,y0,x1,y1]`**(너비·높이가 아니라 두 모서리 — `[72,72,400,80]`처럼 주면 뒤집힌 상자라 글자가 0개 나온다)
+- 앱 없이 한 번에: `designcraft-cli run --cmd 'style.paragraph.edit={…}' --cmd 'frame.create={…}' --scale 2 --export out.png --export out.pdf` (`--cmd ID=JSON`, 출력 줄의 `N glyphs`가 0이면 글자가 안 들어간 것)
 
 ### PhotoCraft
 - `doc_open`/`doc_new` → `command_list`로 id 확인 → `command_run`(한 명령 = 한 히스토리) → `render_preview` → `doc_save`(확장자로 export 형식 결정). 경로는 read/write root 기준 상대경로(절대경로도 루트 안이면 됨, 0.18+)
@@ -141,6 +142,25 @@ ArtCraft(storytold) 앱 6종. 각 앱의 **CLI `mcp` 서브커맨드가 stdio MC
 ### SoundCraft
 - `new_session`/`open_session` → `import_audio` → `list_commands`로 id → `execute`/`batch` → `inspect_session`으로 확인 → `bounce_mix`(WAV). 위치는 샘플 정수·`{"seconds":x}`·`"0:12.500"`
 - 재생 장치·버퍼(`setup.playback_engine`/`setup.hardware`)는 앱에서만 적용, headless에선 안 된다(0.15+)
+
+## 추가 앱 (2026-11-12 첫 시험, headless CLI만)
+
+같은 제작사·같은 서명. GUI는 런처, CLI는 `install-craft.sh --with=figcraft,pdfcraft`(윈도우 `-With figcraft,pdfcraft`)로 — figcraft는 `.mcp.json`에도 등록되고 pdfcraft는 CLI만(MCP 도구가 많아 셸에서 쓴다). 맥 `--force`는 깔려 있는 선택 앱도 같이 올린다. 다른 신규 앱(LightCraft·DeckCraft·WordCraft·GridCraft·AniCraft 등)도 CLI·MCP가 있으나 미시험.
+
+### FigCraft (Figma 급 — 화면 시안·컴포넌트·코드 내보내기)
+- `figcraft-cli run script.json --out a.figcraft` — `[{"command","params","as"?}]`, 전체가 한 번에 적용되고 한 단계라도 실패하면 전부 되돌린다. **앞 단계 결과 참조는 `{"$ref":"이름"}`**(그 단계에 `"as":"이름"`) 또는 `{"$step":n}`, 다른 필드는 `"field":"ids/0"`
+- 만들기: `node.create {type:"frame"|"text"|…, parent, name, text, width, height, props:{…}}`. 오토 레이아웃은 props에 `layout:"vertical"|"horizontal"|"grid"`, `padding:n|[t,r,b,l]`, `gap`, `sizingH`/`sizingV:"fixed"|"hug"|"fill"`, 그 밖에 `fill`, `cornerRadius`, `fontSize`, `fontStyle:"Bold"`. 모르는 props는 거부하고 아는 키 목록을 오류에 적어 준다
+- 한글은 시스템 폰트로 정상 렌더(`text.missingFonts` → `{families:[]}`), `--no-system-fonts`를 주면 내장 폰트만
+- 확인 `figcraft-cli render a.figcraft -o a.png --scale 2`, 내보내기 `file.export {ids, format:"png|svg|pdf|xml(Android Vector Drawable)", size:"2x"|"512w", path}`
+- **코드**: `inspect.code {id, language:"compose"|"swiftui"|"react"|"tailwind"|"flutter"|…}` → `{code}`. Compose 결과는 `Column`/`Row`/`Text`에 크기·색을 그대로 박은 직역(`Modifier.size(390.dp, 520.dp)`, `Color(0xFF…)`)이라 **뼈대로 쓰고 테마·`fillMaxWidth`는 손으로 바꾼다**(`sizingH:"fill"`이 Compose엔 반영 안 됨, tailwind엔 `self-stretch`로 반영)
+- 명령 목록 `figcraft-cli commands --filter <글자>`. MCP는 `figcraft-cli mcp`(headless) / `mcp --attach <port>`(실행 중인 앱). 앱의 "온라인 공유"는 공개 서버에 암호화 없이 올라간다 — 쓰지 않는다
+
+### PdfCraft (PDF 읽기·주석·페이지 정리)
+- 셸: `pdfcraft-cli text a.pdf [--page N]`(한글 추출 정상) · `render a.pdf --page 1 --dpi 110 --out p.png` · `combine`·`extract --pages 1,3,5-8`·`split`·`edit --rotate/--delete/--move`
+- 도구 스크립트: `pdfcraft-cli run --script steps.json --root <폴더>` — `[{"tool","args"}]`, 문서는 `doc_open {path}`가 돌려준 번호(`doc:1`)로 가리킨다. 도구와 스키마는 `pdfcraft-cli tools`
+- **문구로 하이라이트**: `comment_add {doc, page, type:"highlight", find:"모카 고양이", contents:"메모"}` — `page`가 필수(없으면 `missing argument page`), 한글 문구도 찾는다. 위치만 알고 싶으면 `text_find {doc, query}` → 페이지·사각형. 저장은 `doc_save {doc, path}`
+- MCP: `pdfcraft-cli mcp --root <폴더> --compact`(도구 목록을 핵심 10여 개 + `tool_search`/`tool_call`로 줄임). 루트는 `--automation-read-root`/`--automation-write-root`로 나눠 줄 수도 있다
+- 제작사가 밝힌 약점: 기존 본문 텍스트 수정(특히 CJK), 라틴 문자 외 OCR, 오피스 문서 변환
 
 ## 결과 보여주기
 - 렌더 이미지는 사용자 화면에 띄운다(맥 `open`, 윈도우 `ii`). MP4가 "안 보인다"면 파일부터 의심하지 말고 `ffmpeg -ss <t> -frames:v 1`로 프레임을 뽑아 확인 → 대개 같은 파일명이라 플레이어가 예전 창을 그대로 둔 것. 맥은 `osascript -e 'tell application "QuickTime Player" to close every document'` 후 다시 열거나 GIF(`ffmpeg … palettegen/paletteuse`)로 브라우저에서

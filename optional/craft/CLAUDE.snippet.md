@@ -2,6 +2,7 @@
 
 - 6종(vectorcraft·photocraft·effectcraft·designcraft·filmcraft·soundcraft)을 **headless MCP**로 `.mcp.json`에 등록. 파일 접근은 이 프로젝트 폴더로 제한(filmcraft만 옵션이 없어 경로를 직접 프로젝트 안으로 지정).
 - 설치·`.mcp.json` 생성은 `setup/windows/install-craft.ps1` / `setup/mac/install-craft.sh`. 공통 사용법·함정은 프로젝트 스킬 **`craft`**(`.claude/skills/craft/SKILL.md`, 맥·윈도우 차이 포함).
+- 선택 앱(기기에 설치한 경우만): FigCraft(화면 시안 파일·코드 내보내기, MCP `figcraft`)·PdfCraft(PDF 주석·정리, 셸 `pdfcraft-cli`). 설치는 `install-craft --with=figcraft,pdfcraft`, 흐름은 스킬 `craft`의 "추가 앱" 절.
 - 작업 폴더: 원본 `craft/{vector,photo,effect,design,film,sound}/`, 영상·PDF·오디오 결과물 `craft/out/`. 이미지 후보 `img/candidates/`(로컬), 확정 `img/`.
 - 용도 예: 로고·아이콘(vector), 사진 보정·합성(photo), 영상 편집(film)·오디오(sound), 문서·PDF(design).
 - 라이브 앱 브리지(`--control <port>`)를 쓰면 포트를 STATE에 적어 두 사람이 겹치지 않게 한다.

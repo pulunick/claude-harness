@@ -15,10 +15,12 @@
   .\setup\windows\install-craft.ps1 -Only vectorcraft,photocraft   # 일부만
   .\setup\windows\install-craft.ps1 -Force                         # 받아 둔 것도 다시 설치
   .\setup\windows\install-craft.ps1 -McpOnly                       # 설치 건너뛰고 .mcp.json만 다시 생성
+  .\setup\windows\install-craft.ps1 -With figcraft,pdfcraft        # 선택 앱도 설치 (figcraft는 .mcp.json에도, pdfcraft는 CLI만)
 #>
 param(
   [string[]]$Only = @("vectorcraft", "photocraft", "effectcraft", "designcraft", "filmcraft", "soundcraft"),
   [string]$InstallRoot = (Join-Path $env:LOCALAPPDATA "ArtCraft"),
+  [string[]]$With = @(),
   [switch]$Force,
   [switch]$McpOnly
 )
@@ -30,7 +32,11 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $DisplayName = @{
   vectorcraft = "VectorCraft"; photocraft = "PhotoCraft"; effectcraft = "EffectCraft"
   designcraft = "DesignCraft"; filmcraft = "FilmCraft"; soundcraft = "SoundCraft"
+  figcraft = "FigCraft"; pdfcraft = "PdfCraft"
 }
+# 선택 앱: -With 로 고른 것만 설치. pdfcraft는 MCP 도구가 많아 .mcp.json에 넣지 않고 CLI로만 쓴다
+$CliOnly = @("pdfcraft")
+foreach ($w in $With) { if ($DisplayName.ContainsKey($w) -and ($Only -notcontains $w)) { $Only += $w } elseif (-not $DisplayName.ContainsKey($w)) { Write-Warning "모르는 선택 앱: $w" } }
 $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
   "ARM64" { "arm64" }
   "AMD64" { "x64" }
@@ -121,7 +127,7 @@ $rootSlash = $RepoRoot -replace "\\", "/"
 $servers = [ordered]@{}
 foreach ($app in $Only) {
   $cli = $clis[$app]
-  if (-not $cli) { continue }
+  if (-not $cli -or ($CliOnly -contains $app)) { continue }
   $cliSlash = $cli -replace "\\", "/"
   $args = @("mcp")
   if ($app -ne "filmcraft") {
