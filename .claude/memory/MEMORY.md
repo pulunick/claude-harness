@@ -9,3 +9,4 @@
 - [브라우저·파일 함정](reference_browser_file_pitfalls.md) — Chrome: `--chrome`으로 연결, 웹 VS Code에선 key 금지, 한글 파일명 업로드 거부 → 영문 사본 · 윈도우 한글 zip은 `metadata_encoding="cp949"`
 - [사용자가 보는 탭은 새로고침하지 않기](feedback_dont_reload_users_tab.md) — 확인은 새 탭·headless, 사용자에겐 "새로고침하면 적용"과 저장 전 작업 유실을 알림
 - [지울 수 없는 기록에 남는 버튼은 시험으로 누르지 않기](feedback_test_without_writing_records.md) — 복사본+다른 포트 또는 화면 안 임시 상태로 확인, 안 눌러 본 것은 보고에
+- [API 키 만료일은 services.md에](feedback_api_key_expiry.md) — `만료 YYYY-MM-DD`로 적으면 상황판이 30일 전부터 알림, 짧은 기본 만료는 사용자에게 기간을 물음

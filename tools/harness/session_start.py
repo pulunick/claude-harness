@@ -27,6 +27,37 @@ def git(*args, timeout=10):
         return ""
 
 
+EXPIRY_DAYS = 30
+
+
+def expiring(text, today, days=EXPIRY_DAYS):
+    """docs/services.md 에서 만료일을 찾는다 — 줄 안의 `만료 2027-11-24`(굵게·콜론 허용) 또는 머리줄에 '만료'가 든 표 칸.
+    days 안쪽이거나 지난 것만 (이름, 날짜, 남은 날) 로. 날짜 형식은 YYYY-MM-DD 만."""
+    import datetime
+    hits, col = [], None
+    for line in text.splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.lstrip().startswith("|") else None
+        found = []
+        if cells:
+            if any("만료" in c and not re.search(r"\d{4}-\d{2}-\d{2}", c) for c in cells):
+                col = next(i for i, c in enumerate(cells) if "만료" in c)
+                continue
+            if col is not None and col < len(cells):
+                found = re.findall(r"\d{4}-\d{2}-\d{2}", cells[col])
+        else:
+            col = None
+        found += re.findall(r"만료[*\s:：]*(\d{4}-\d{2}-\d{2})", line)
+        for d in dict.fromkeys(found):
+            try:
+                left = (datetime.date.fromisoformat(d) - today).days
+            except ValueError:
+                continue
+            if left <= days:
+                name = re.sub(r"[*`|]", "", (cells[0] if cells else line)).strip(" -")[:60]
+                hits.append((name, d, left))
+    return hits
+
+
 def main():
     out = []
     who = git("config", "harness.who") or git("config", "user.name") or "(미설정)"
@@ -100,6 +131,16 @@ def main():
             out.append("이슈: gh 미로그인 또는 원격 접근 불가 — gh auth login (없으면 /issue 대신 STATE 결정 대기에)")
     except FileNotFoundError:
         out.append("이슈: gh CLI 없음 — setup/README.md 참고 (없어도 작업은 됨)")
+    except Exception:
+        pass
+
+    # 외부 서비스 키 만료 (docs/services.md 가 있을 때만)
+    try:
+        import datetime
+        svc = ROOT / "docs" / "services.md"
+        if svc.exists():
+            for name, d, left in expiring(svc.read_text(encoding="utf-8", errors="replace"), datetime.date.today()):
+                out.append(f"⚠ 키 만료 {'지남' if left < 0 else f'{left}일 남음'} ({d}) — {name} → docs/services.md 갱신 절차")
     except Exception:
         pass
 
