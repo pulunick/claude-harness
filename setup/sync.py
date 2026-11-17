@@ -156,6 +156,7 @@ def init(root, profile, with_mods, title, desc, bare=False):
     root.mkdir(parents=True, exist_ok=True)
     mods = list(dict.fromkeys(M.PROFILE_DEFAULTS[profile] + with_mods))
     existing = M.read_manifest(root)
+    had = set(existing["modules"]) if existing else set()
     if existing:
         mods = list(dict.fromkeys(existing["modules"] + mods))
     notes = []
@@ -163,7 +164,8 @@ def init(root, profile, with_mods, title, desc, bare=False):
         print(f"team 프로필의 새 프로젝트는 `gh repo create --template {M.harness_url().replace('https://github.com/', '')}` 후 `setup/init.py` 로 만든다. "
               "여기서는 기존 team 저장소에 manifest 만 입힌다.")
     for mod in mods:
-        if bare or mod in ("core", "team"):
+        # 이미 켜 둔 모듈의 enable 은 다시 돌리지 않는다 — 기존 프로젝트에 모듈을 더할 때 settings·.gitignore 를 건드리지 않게
+        if bare or mod in ("core", "team") or mod in had:
             continue
         notes += M.enable(mod, root, profile, mods)
     if profile == "solo":
