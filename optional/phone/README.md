@@ -32,7 +32,7 @@ python3 <하네스>/setup/sync.py init <프로젝트> --with phone      # 기존
 | `display_id` | 화면 둘인 폰(Flip 등)의 메인 화면 id. 비우면 `dumpsys SurfaceFlinger --display-id`의 `HWC display 0`에서 자동 |
 | `launchers` | 기본(삼성·픽셀·AOSP) 밖의 런처 패키지 — 전면 앱 판정용 |
 | `keyboard` | 원래 키보드 IME(손으로 복귀할 때 참고, 헬퍼는 입력 직전 값을 기억해 되돌린다) |
-| `account` | (선택) 확인할 로그인 계정 — `{"expect": "qa-test@", "path": ["설정", "계정"]}`. 앱을 연 첫 화면에서 `path` 문구를 차례로 눌러 `expect` 문구가 보이는지 본다. `path`에 누르지 않는 목록 문구가 있으면 거부된다 |
+| `account` | (선택) 확인할 로그인 계정 — `{"expect": "qa-test@", "absent": ["심사용 계정에만 보이는 문구"], "path": ["설정", "계정"]}`. 앱을 연 첫 화면에서 `path` 문구를 차례로 눌러 `expect` 문구가 보이고 `absent` 문구는 안 보이는지 본다(둘 중 하나만 써도 됨). 계정들이 같은 문구로 보이면 한쪽에만 있는 문구를 `absent`로. `path`에 누르지 않는 목록 문구가 있으면 거부된다 |
 
 ### ADBKeyboard (테스트 폰) — 한글 입력용
 - 출처: https://github.com/senzhk/ADBKeyBoard (GPL-2.0)

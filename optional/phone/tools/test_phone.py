@@ -238,6 +238,18 @@ class AccountTest(unittest.TestCase):
         self.assertEqual(taps, [])
         self.assertEqual(backs, [])
 
+    def test_absent_text_separates_lookalike_accounts(self):
+        review = [node("구글 계정으로 연결됨"), node("2027년 11월 12일까지")]
+        acc = {"expect": "구글 계정으로 연결됨", "absent": ["2027년 11월 12일까지"], "path": []}
+        rc, _, _, out = self.run_check([review], acc)
+        self.assertEqual(rc, 1)
+        self.assertIn("보임", out)
+        self.assertEqual(self.run_check([[node("구글 계정으로 연결됨")]], acc)[0], 0)
+
+    def test_absent_only_and_string_form(self):
+        self.assertEqual(self.run_check([[node("qa")]], {"absent": "심사용"})[0], 0)
+        self.assertEqual(self.run_check([[node("심사용 계정")]], {"absent": "심사용"})[0], 1)
+
     def test_missing_expect_is_config_error(self):
         self.assertEqual(self.run_check([[node("x")]], {"path": []})[0], 2)
 

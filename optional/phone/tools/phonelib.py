@@ -38,7 +38,7 @@ class Denied(Exception):
 
 def conf():
     """phone.json — serial(비우면 adb 기본 기기)·app(패키지)·app_name·display_id(비우면 자동)·launchers(더할 런처)·
-    account(선택: {"expect": 보여야 할 계정 문구, "path": [그 화면까지 누를 문구…]})."""
+    account(선택: {"expect": 보여야 할 계정 문구, "absent": [보이면 안 되는 문구…], "path": [그 화면까지 누를 문구…]})."""
     global _conf
     if _conf is None:
         _conf = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
@@ -271,11 +271,13 @@ def cmd_preflight(args):
         bad.append(f"버전이 {want} 아님")
     print(f"키보드: {current_ime()}")
     acc = conf().get("account")
+    want_acc = acc_label(acc)
     if acc and "--account" in args and not bad:
+        sys.stdout.flush()            # 하위 프로세스(phone-harness) 출력보다 위 점검 줄이 먼저 찍히게
         if run_harness_cmd("account", []) != 0:
-            bad.append(f"로그인 계정이 '{acc.get('expect')}' 아님(사용자가 계정을 바꿔야 함)")
+            bad.append(f"로그인 계정이 기대({want_acc})와 다름(사용자가 계정을 바꿔야 함)")
     elif acc and "--account" not in args:
-        print(f"계정: 확인 안 함 — 처음 확인할 때 preflight --account (기대 '{acc.get('expect')}')")
+        print(f"계정: 확인 안 함 — 처음 확인할 때 preflight --account (기대 {want_acc})")
     for b in bad:
         print(f"✗ {b}")
     return 1 if bad else 0
@@ -402,12 +404,23 @@ def type_ko(h, sentence):
             print(f"경고: 키보드 복귀 실패 — 지금 {after}, 원래 {original}", file=sys.stderr)
 
 
+def acc_label(acc):
+    acc = acc or {}
+    absent = acc.get("absent") or []
+    absent = [absent] if isinstance(absent, str) else absent
+    parts = ([f"'{acc['expect']}' 있음"] if acc.get("expect") else []) + [f"'{a}' 없음" for a in absent]
+    return " · ".join(parts) or "(비어 있음)"
+
+
 def check_account(h, args):
-    """phone.json account — 앱을 열고 path 문구를 차례로 눌러(누르지 않는 목록 적용) expect 문구가 보이는지. 뒤로 가기로 돌아온다."""
+    """phone.json account — 앱을 열고 path 문구를 차례로 눌러(누르지 않는 목록 적용) expect 문구가 보이고
+    absent 문구는 안 보이는지. 비슷하게 보이는 계정(테스트·심사용)은 한쪽에만 있는 문구를 absent 로 가른다. 뒤로 가기로 돌아온다."""
     acc = conf().get("account") or {}
     expect, path = acc.get("expect"), acc.get("path", [])
-    if not expect:
-        print("phone.json 에 account.expect 가 없음")
+    absent = acc.get("absent") or []
+    absent = [absent] if isinstance(absent, str) else absent
+    if not expect and not absent:
+        print("phone.json 에 account.expect 나 account.absent 가 없음")
         return 2
     h["open_app"](app())
     h["wait_stable"](timeout=15)
@@ -417,9 +430,17 @@ def check_account(h, args):
             safe_tap(h, step)
             went += 1
             h["wait_stable"](timeout=6)
-        found = find(h, expect)
-        print(f"계정: {'✓' if found else '✗'} '{expect}'" + ("" if found else " 없음 — 다른 계정으로 로그인돼 있을 수 있음"))
-        return 0 if found else 1
+        nodes = h["ui"]()
+        ok = True
+        if expect:
+            found = bool(find(h, expect, nodes))
+            ok = ok and found
+            print(f"계정: {'✓' if found else '✗'} '{expect}'" + ("" if found else " 없음 — 다른 계정으로 로그인돼 있을 수 있음"))
+        for a in absent:
+            hit = bool(find(h, a, nodes))
+            ok = ok and not hit
+            print(f"계정: {'✗' if hit else '✓'} '{a}' " + ("보임 — 다른 계정으로 로그인돼 있음" if hit else "안 보임"))
+        return 0 if ok else 1
     except (LookupError, Denied, FileNotFoundError) as e:
         print(f"계정: 확인 실패 — {e} (phone.json account.path 확인)")
         return 1
