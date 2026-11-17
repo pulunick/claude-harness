@@ -32,6 +32,7 @@ python3 <하네스>/setup/sync.py init <프로젝트> --with phone      # 기존
 | `display_id` | 화면 둘인 폰(Flip 등)의 메인 화면 id. 비우면 `dumpsys SurfaceFlinger --display-id`의 `HWC display 0`에서 자동 |
 | `launchers` | 기본(삼성·픽셀·AOSP) 밖의 런처 패키지 — 전면 앱 판정용 |
 | `keyboard` | 원래 키보드 IME(손으로 복귀할 때 참고, 헬퍼는 입력 직전 값을 기억해 되돌린다) |
+| `account` | (선택) 확인할 로그인 계정 — `{"expect": "qa-test@", "path": ["설정", "계정"]}`. 앱을 연 첫 화면에서 `path` 문구를 차례로 눌러 `expect` 문구가 보이는지 본다. `path`에 누르지 않는 목록 문구가 있으면 거부된다 |
 
 ### ADBKeyboard (테스트 폰) — 한글 입력용
 - 출처: https://github.com/senzhk/ADBKeyBoard (GPL-2.0)
@@ -52,7 +53,7 @@ adb -s <serial> shell ime enable com.android.adbkeyboard/.AdbIME
 ### 헬퍼 (`tools/phone/`)
 | 명령 | 하는 일 | 종료 코드 |
 |---|---|---|
-| `preflight [--wait-version V [--timeout 초]]` | adb 상태·전면 앱·화면 켜짐/잠금·네트워크·앱 버전·키보드 출력. `--wait-version`은 그 버전이 깔릴 때까지 기다리고, 전면이 스토어(업데이트하던 화면)면 홈으로 돌린다 | 0 통과 / 1 조건 미달 / 2 adb 미연결·설정 없음 |
+| `preflight [--wait-version V [--timeout 초]] [--account]` | adb 상태·전면 앱·화면 켜짐/잠금·네트워크·앱 버전·키보드 출력. `--wait-version`은 그 버전이 깔릴 때까지 기다리고, 전면이 스토어(업데이트하던 화면)면 홈으로 돌린다. `--account`는 나머지가 통과하면 `phone.json` `account`대로 앱을 열어 로그인 계정을 보고 뒤로 돌아온다(화면이 바뀌므로 켤 때만) | 0 통과 / 1 조건 미달 / 2 adb 미연결·설정 없음 |
 | `see "문구" …` · `see --absent "문구"` | 지금 화면 트리에 문구가 있는지(부분 일치, 텍스트·설명). 읽기만 | 0 / 1 |
 | `see --dump` | 화면의 글자 있는 노드 전부(위→아래, 누를 수 있는 것 `•`) — 모르는 화면에서 다음 탭 문구 찾기 | 0 |
 | `tap "문구"` | 문구가 든 버튼을 누름. 요청 문구와 잡힌 노드의 텍스트·설명을 둘 다 누르지 않는 목록과 대조 | 0 / 1 없음 / 3 거부 |
@@ -83,6 +84,7 @@ adb -s <serial> shell ime enable com.android.adbkeyboard/.AdbIME
 - **흐름 확인**: 예) `tools/phone/turn "안녕"` → 기대: 응답 1개 이상, 실패 문구 없음, 0으로 끝남.
 - **이전 글이 사라지는 화면**(대화 화면처럼 새 글이 오면 위 글이 화면 밖으로 밀리는 곳)에선 "보낸 문장이 보이는가"를 확인 방법으로 쓰지 않는다 — 응답 문구나 늘어난 텍스트로 확인한다.
 - **결과 적기**: 기기·빌드(`preflight` 출력의 versionName/versionCode)·시각·명령·종료 코드. 텍스트로 확인 못 한 것(그림·색·배치)은 "미확인" 또는 `shot` 경로(저장소 밖)와 함께 눈으로 본 결과로 남긴다.
+- **로그인 계정**: 그날 첫 실기기 확인은 `preflight --account`로 시작한다(`phone.json` `account` 없으면 사람에게 계정을 묻는다). 심사용·실사용 계정이 로그인돼 있으면 멈추고 사용자에게 바꿔 달라고 한다 — 계정 바꾸기는 로그아웃이 들어가 헬퍼가 하지 않는다.
 - 결제·해지·탈퇴·로그아웃은 헬퍼가 누르지 않는다. 그 흐름은 "사용자 직접 확인"으로 적는다.
 - **실기기 미확인**: 단위 테스트로만 확인한 것(예: 같은 줄 다른 문구로 요청했을 때의 노드 단계 거부)은 실기기에서 한 번 확인할 때까지 "unittest만"으로 적는다.
 

@@ -37,7 +37,8 @@ class Denied(Exception):
 
 
 def conf():
-    """phone.json — serial(비우면 adb 기본 기기)·app(패키지)·app_name·display_id(비우면 자동)·launchers(더할 런처)."""
+    """phone.json — serial(비우면 adb 기본 기기)·app(패키지)·app_name·display_id(비우면 자동)·launchers(더할 런처)·
+    account(선택: {"expect": 보여야 할 계정 문구, "path": [그 화면까지 누를 문구…]})."""
     global _conf
     if _conf is None:
         _conf = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
@@ -222,8 +223,9 @@ def _opt(args, name, default=None):
 
 
 def cmd_preflight(args):
-    """사용: preflight [--wait-version <versionName> [--timeout 초]]
-    --wait-version: 그 버전이 깔릴 때까지 기다린 뒤 점검. 전면이 스토어(업데이트하던 화면)면 홈으로 돌려놓는다 — 그 밖의 전면 앱은 묻는다."""
+    """사용: preflight [--wait-version <versionName> [--timeout 초]] [--account]
+    --wait-version: 그 버전이 깔릴 때까지 기다린 뒤 점검. 전면이 스토어(업데이트하던 화면)면 홈으로 돌려놓는다 — 그 밖의 전면 앱은 묻는다.
+    --account: 다른 점검이 통과하면 phone.json account 대로 앱을 열어 그 화면에서 계정 문구를 본다(화면이 바뀌므로 켤 때만)."""
     if not app():
         print(f"phone.json 의 app(패키지)이 비어 있음 — {CONFIG} 를 채워 주세요")
         return 2
@@ -268,6 +270,12 @@ def cmd_preflight(args):
     elif want and vn != want:
         bad.append(f"버전이 {want} 아님")
     print(f"키보드: {current_ime()}")
+    acc = conf().get("account")
+    if acc and "--account" in args and not bad:
+        if run_harness_cmd("account", []) != 0:
+            bad.append(f"로그인 계정이 '{acc.get('expect')}' 아님(사용자가 계정을 바꿔야 함)")
+    elif acc and "--account" not in args:
+        print(f"계정: 확인 안 함 — 처음 확인할 때 preflight --account (기대 '{acc.get('expect')}')")
     for b in bad:
         print(f"✗ {b}")
     return 1 if bad else 0
@@ -394,6 +402,33 @@ def type_ko(h, sentence):
             print(f"경고: 키보드 복귀 실패 — 지금 {after}, 원래 {original}", file=sys.stderr)
 
 
+def check_account(h, args):
+    """phone.json account — 앱을 열고 path 문구를 차례로 눌러(누르지 않는 목록 적용) expect 문구가 보이는지. 뒤로 가기로 돌아온다."""
+    acc = conf().get("account") or {}
+    expect, path = acc.get("expect"), acc.get("path", [])
+    if not expect:
+        print("phone.json 에 account.expect 가 없음")
+        return 2
+    h["open_app"](app())
+    h["wait_stable"](timeout=15)
+    went = 0
+    try:
+        for step in path:
+            safe_tap(h, step)
+            went += 1
+            h["wait_stable"](timeout=6)
+        found = find(h, expect)
+        print(f"계정: {'✓' if found else '✗'} '{expect}'" + ("" if found else " 없음 — 다른 계정으로 로그인돼 있을 수 있음"))
+        return 0 if found else 1
+    except (LookupError, Denied, FileNotFoundError) as e:
+        print(f"계정: 확인 실패 — {e} (phone.json account.path 확인)")
+        return 1
+    finally:
+        for _ in range(went):
+            sh("input keyevent KEYCODE_BACK")
+            time.sleep(0.5)
+
+
 def cmd_type_ko(h, args):
     if len(args) != 1:
         print("사용: type_ko \"문장\"")
@@ -406,7 +441,7 @@ def cmd_type_ko(h, args):
         return 1
 
 
-HARNESS_CMDS = {"see": cmd_see, "tap": cmd_tap, "type_ko": cmd_type_ko}
+HARNESS_CMDS = {"see": cmd_see, "tap": cmd_tap, "type_ko": cmd_type_ko, "account": check_account}
 ADB_CMDS = {"preflight": cmd_preflight, "shot": cmd_shot}
 
 
@@ -440,6 +475,11 @@ def main(argv):
     cmd, args = argv[0], argv[1:]
     if cmd in ac:
         return ac[cmd](args)
+    return run_harness_cmd(cmd, args)
+
+
+def run_harness_cmd(cmd, args):
+    """phone-harness 안에서 명령 하나를 돌린다(adb 명령에서 화면 읽기가 필요할 때도 이걸로)."""
     script = (f"import sys, json\nsys.path.insert(0, {str(HERE)!r})\nimport phonelib\n"
               f"sys.exit(phonelib.run_in_harness({cmd!r}, json.loads({json.dumps(json.dumps(args))}), globals()))\n")
     return subprocess.run(["phone-harness"], input=script, text=True).returncode

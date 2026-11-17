@@ -195,5 +195,52 @@ class AppHookTest(unittest.TestCase):
             self.assertIn("preflight", ac)
 
 
+class AccountTest(unittest.TestCase):
+    def run_check(self, screens, account):
+        old, backs = pl._conf, []
+        pl._conf = {"app": "com.example.app", "account": account}
+        old_sh = pl.sh
+        pl.sh = lambda cmd: backs.append(cmd) or ""
+        fh = FakeHarness(screens)
+        buf = io.StringIO()
+        try:
+            with tempfile.TemporaryDirectory() as d:
+                (Path(d) / "deny.txt").write_text("\n".join(DENY), encoding="utf-8")
+                old_deny = pl.DENY
+                pl.DENY = Path(d) / "deny.txt"
+                try:
+                    with redirect_stdout(buf):
+                        rc = pl.check_account(fh.h(), [])
+                finally:
+                    pl.DENY = old_deny
+        finally:
+            pl._conf, pl.sh = old, old_sh
+        return rc, fh.taps, backs, buf.getvalue()
+
+    def test_expected_account_after_path_passes_and_goes_back(self):
+        home = [node("설정", x=1, y=1)]
+        settings = [node("계정", x=2, y=2)]
+        account = [node("qa-test@example.com")]
+        rc, taps, backs, _ = self.run_check([home, settings, account, account],
+                                            {"expect": "qa-test", "path": ["설정", "계정"]})
+        self.assertEqual(rc, 0)
+        self.assertEqual(taps, [(1, 1), (2, 2)])
+        self.assertEqual(sum("KEYCODE_BACK" in b for b in backs), 2)
+
+    def test_other_account_fails(self):
+        rc, _, _, out = self.run_check([[node("review@example.com")]], {"expect": "qa-test", "path": []})
+        self.assertEqual(rc, 1)
+        self.assertIn("없음", out)
+
+    def test_denied_step_is_not_tapped(self):
+        rc, taps, backs, out = self.run_check([[node("로그아웃")]], {"expect": "qa-test", "path": ["로그아웃"]})
+        self.assertEqual(rc, 1)
+        self.assertEqual(taps, [])
+        self.assertEqual(backs, [])
+
+    def test_missing_expect_is_config_error(self):
+        self.assertEqual(self.run_check([[node("x")]], {"path": []})[0], 2)
+
+
 if __name__ == "__main__":
     unittest.main()
