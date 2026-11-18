@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import phonelib as pl  # noqa: E402
@@ -80,6 +81,52 @@ class DenyTest(unittest.TestCase):
         fake = FakeHarness([[node("다른 것")]])
         with self.assertRaises(LookupError):
             pl.safe_tap(fake.h(), "보내기", DENY)
+
+
+class PickTest(unittest.TestCase):
+    """2026-11-18 usroom: tap "확인"이 공지 본문 '…확인하는…'을 누른 결함."""
+    def test_exact_match_beats_earlier_partial(self):
+        fake = FakeHarness([[node("공지를 확인하는 방법", y=100, clickable=False),
+                             node("확인", cls="android.widget.Button", x=500, y=900)]])
+        pl.safe_tap(fake.h(), "확인", DENY)
+        self.assertEqual(fake.taps, [(500, 900)])
+
+    def test_exact_match_prefers_clickable(self):
+        fake = FakeHarness([[node("확인", x=1, y=1, clickable=False), node("확인", x=2, y=2)]])
+        pl.safe_tap(fake.h(), "확인", DENY)
+        self.assertEqual(fake.taps, [(2, 2)])
+
+    def test_single_partial_still_tapped(self):
+        fake = FakeHarness([[node("새 대화 시작하기", x=3, y=3)]])
+        pl.safe_tap(fake.h(), "새 대화", DENY)
+        self.assertEqual(fake.taps, [(3, 3)])
+
+    def test_partial_prefers_the_only_clickable(self):
+        fake = FakeHarness([[node("확인하세요", clickable=False), node("확인했어요", x=4, y=4)]])
+        pl.safe_tap(fake.h(), "확인", DENY)
+        self.assertEqual(fake.taps, [(4, 4)])
+
+    def test_several_clickable_partials_stop_without_tapping(self):
+        fake = FakeHarness([[node("확인하기", x=1, y=1), node("확인 후 닫기", x=2, y=2)]])
+        with self.assertRaises(pl.Ambiguous) as cm:
+            pl.safe_tap(fake.h(), "확인", DENY)
+        self.assertEqual(len(cm.exception.nodes), 2)
+        self.assertEqual(fake.taps, [])
+
+    def test_exact_flag_refuses_partial(self):
+        fake = FakeHarness([[node("확인하기")]])
+        with self.assertRaises(LookupError):
+            pl.safe_tap(fake.h(), "확인", DENY, exact=True)
+        self.assertEqual(fake.taps, [])
+
+    def test_cmd_tap_ambiguous_prints_candidates(self):
+        fake = FakeHarness([[node("확인하기"), node("확인 후 닫기")]])
+        buf = io.StringIO()
+        with redirect_stdout(buf), mock.patch.object(pl, "load_deny", return_value=DENY):
+            rc = pl.cmd_tap(fake.h(), ["확인"])
+        self.assertEqual(rc, 4)
+        self.assertIn("확인 후 닫기", buf.getvalue())
+        self.assertEqual(fake.taps, [])
 
 
 class SeeTest(unittest.TestCase):

@@ -36,6 +36,13 @@ class Denied(Exception):
     pass
 
 
+class Ambiguous(LookupError):
+    """부분 일치 후보가 여럿이라 어느 것을 누를지 정할 수 없음 — 누르지 않고 후보를 돌려준다."""
+    def __init__(self, query, nodes):
+        super().__init__(f"'{query}' 부분 일치 후보 {len(nodes)}개 — 정확한 문구로 다시")
+        self.nodes = nodes
+
+
 def conf():
     """phone.json — serial(비우면 adb 기본 기기)·app(패키지)·app_name·display_id(비우면 자동)·launchers(더할 런처)·
     account(선택: {"expect": 보여야 할 계정 문구, "absent": [보이면 안 되는 문구…], "path": [그 화면까지 누를 문구…]})."""
@@ -308,15 +315,29 @@ def find(h, query, nodes=None):
     return [n for n in nodes if any(query in s for s in node_strings(n))]
 
 
-def safe_tap(h, query, deny=None):
+def pick(nodes, query, exact=False):
+    """누를 노드 하나 고르기. 1) 텍스트·설명이 문구와 정확히 같은 노드(여럿이면 누를 수 있는 것 먼저)
+    2) 없으면(--exact 아닐 때) 부분 일치 — 하나면 그것, 여럿이면 누를 수 있는 것만 남겨 하나일 때만. 그래도 여럿이면 Ambiguous.
+    (2026-11-18 usroom: 공지 창 '확인' 버튼 대신 본문 '…확인하는…'을 누른 결함)"""
+    q = query.strip()
+    hits = [n for n in nodes if any(s.strip() == q for s in node_strings(n) if s)]
+    if not hits and not exact:
+        hits = find(None, query, nodes)
+        if len(hits) > 1:
+            hits = [n for n in hits if n.get("clickable")] or hits
+            if len(hits) > 1:
+                raise Ambiguous(query, hits)
+    if not hits:
+        raise LookupError(f"화면에 '{query}' " + ("(정확히 같은 문구) " if exact else "") + "없음")
+    return ([n for n in hits if n.get("clickable")] or hits)[0]
+
+
+def safe_tap(h, query, deny=None, exact=False):
     deny = load_deny() if deny is None else deny
     hit = is_denied([query], deny)
     if hit:
         raise Denied(f"누르지 않는 목록: '{hit}'")
-    nodes = find(h, query)
-    if not nodes:
-        raise LookupError(f"화면에 '{query}' 없음")
-    n = nodes[0]
+    n = pick(h["ui"](), query, exact)
     hit = is_denied(node_strings(n), deny)
     if hit:
         raise Denied(f"누르지 않는 목록: '{hit}' (노드 '{n.get('text') or n.get('desc')}')")
@@ -358,17 +379,24 @@ def cmd_see(h, args):
 
 
 def cmd_tap(h, args):
+    exact = "--exact" in args
+    args = [a for a in args if a != "--exact"]
     if len(args) != 1:
-        print("사용: tap \"문구\"")
+        print("사용: tap [--exact] \"문구\"")
         return 2
     try:
-        n = safe_tap(h, args[0])
+        n = safe_tap(h, args[0], exact=exact)
     except Denied as e:
         print(f"거부: {e}")
         return 3
     except FileNotFoundError as e:
         print(f"거부: {e}")
         return 3
+    except Ambiguous as e:
+        print(f"멈춤: {e}")
+        for line in dump_lines(e.nodes):
+            print(f"  {line}")
+        return 4
     except LookupError as e:
         print(f"실패: {e}")
         return 1
