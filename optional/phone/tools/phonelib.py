@@ -45,11 +45,31 @@ class Ambiguous(LookupError):
 
 def conf():
     """phone.json — serial(비우면 adb 기본 기기)·app(패키지)·app_name·display_id(비우면 자동)·launchers(더할 런처)·
-    account(선택: {"expect": 보여야 할 계정 문구, "absent": [보이면 안 되는 문구…], "path": [그 화면까지 누를 문구…]})."""
+    account(선택: {"expect": 보여야 할 계정 문구, "absent": [보이면 안 되는 문구…], "path": [그 화면까지 누를 문구…]})·
+    variants(선택: {"dev": {"app": …, "app_name": …, …}}) — 환경변수 PHONE_APP=dev 면 그 값이 위 키를 덮는다."""
     global _conf
     if _conf is None:
-        _conf = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
+        raw = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
+        _conf = merge_variant(raw, os.environ.get("PHONE_APP", ""))
     return _conf
+
+
+def merge_variant(raw, name):
+    """한 기기에 같은 앱의 패키지가 둘 이상(Play·dev 디버그 등)일 때 — variants[name] 이 최상위 키를 덮는다.
+    이름이 없거나 'default' 면 그대로. (2026-11-18 usroom 요청)"""
+    if not name or name == "default":
+        return raw
+    variants = raw.get("variants") or {}
+    if name not in variants:
+        raise SystemExit(f"PHONE_APP={name} — phone.json variants 에 없음(있는 것: {', '.join(variants) or '없음'})")
+    return {**raw, **variants[name], "variant": name, "base_app": raw.get("app")}
+
+
+def all_apps(c=None):
+    """기본 + variants 의 모든 패키지 — 전면 앱 판정에서 모두 '이 앱'으로 친다."""
+    c = conf() if c is None else c
+    pkgs = [c.get("app"), c.get("base_app")] + [v.get("app") for v in (c.get("variants") or {}).values()]
+    return tuple(dict.fromkeys(p for p in pkgs if p))
 
 
 def serial():
@@ -61,7 +81,9 @@ def app():
 
 
 def app_name():
-    return conf().get("app_name") or app() or "앱"
+    name = conf().get("app_name") or app() or "앱"
+    v = conf().get("variant")
+    return f"{name}[{v}]" if v and v not in name else name
 
 
 # ---------- 순수 로직 (test_phone.py) ----------
@@ -258,7 +280,7 @@ def cmd_preflight(args):
     fg = foreground()
     print(f"전면 앱: {fg or '?'}")
     launchers = LAUNCHERS + tuple(conf().get("launchers", []))
-    if not (fg == app() or fg.startswith(launchers)):
+    if not (fg in all_apps() or fg.startswith(launchers)):
         bad.append(f"전면 앱이 런처·{app_name()}이 아님(사용자가 폰을 쓰는 중일 수 있음 — 묻고 진행)")
     awake = "Awake" in grep1(sh("dumpsys power"), "mWakefulness=")
     locked = "isKeyguardShowing=true" in sh("dumpsys window")

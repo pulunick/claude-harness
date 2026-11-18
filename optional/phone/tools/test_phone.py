@@ -301,5 +301,29 @@ class AccountTest(unittest.TestCase):
         self.assertEqual(self.run_check([[node("x")]], {"path": []})[0], 2)
 
 
+
+class VariantTest(unittest.TestCase):
+    """2026-11-18 usroom: Play 버전과 dev 디버그 패키지를 한 기기에서 골라 쓴다(PHONE_APP)."""
+    RAW = {"app": "com.ex.app", "app_name": "앱", "account": {"expect": "a"},
+           "variants": {"dev": {"app": "com.ex.app.dev", "app_name": "앱 dev"}}}
+
+    def test_no_variant_keeps_base(self):
+        self.assertEqual(pl.merge_variant(self.RAW, "")["app"], "com.ex.app")
+        self.assertEqual(pl.merge_variant(self.RAW, "default")["app"], "com.ex.app")
+
+    def test_variant_overrides_and_keeps_rest(self):
+        c = pl.merge_variant(self.RAW, "dev")
+        self.assertEqual((c["app"], c["app_name"], c["variant"]), ("com.ex.app.dev", "앱 dev", "dev"))
+        self.assertEqual(c["account"], {"expect": "a"})
+
+    def test_unknown_variant_stops(self):
+        with self.assertRaises(SystemExit):
+            pl.merge_variant(self.RAW, "beta")
+
+    def test_all_apps_counts_every_package(self):
+        self.assertEqual(pl.all_apps(pl.merge_variant(self.RAW, "dev")), ("com.ex.app.dev", "com.ex.app"))
+        self.assertEqual(pl.all_apps({"app": "x"}), ("x",))
+
+
 if __name__ == "__main__":
     unittest.main()
